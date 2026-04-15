@@ -7,6 +7,9 @@ import MenuIcon from '@mui/icons-material/Menu';
 import InfoIcon from '@mui/icons-material/Info';
 
 function App() {
+  const [conversation, setConversation] = useState(null)
+  const [selectedIndex, setSelectedIndex] = useState(null);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
 
@@ -33,32 +36,32 @@ function App() {
           '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 300 },
         }}
       >
-        <SideBar />
+        <SideBar selectedIndex={selectedIndex} onSelectConversation={(id) => setSelectedIndex(id)} setConversation={setConversation} />
       </Drawer>
 
       {/* Desktop Sidebar */}
-      <Box sx={{ 
-        width: { xs: 'none', sm: '300px', md: '360px' }, 
+      <Box sx={{
+        width: { xs: 'none', sm: '300px', md: '360px' },
         display: { xs: 'none', sm: 'block' },
         flexShrink: 0,
         borderRight: '1px solid #e0e0e0'
       }}>
-        <SideBar />
+        <SideBar selectedIndex={selectedIndex} onSelectConversation={(id) => setSelectedIndex(id)} setConversation={setConversation} />
       </Box>
 
       {/* Chat Area */}
-      <Box sx={{ 
-        flexGrow: 1, 
-        height: '100%', 
-        display: 'flex', 
+      <Box sx={{
+        flexGrow: 1,
+        height: '100%',
+        display: 'flex',
         flexDirection: 'column',
         position: 'relative'
       }}>
         {/* Mobile Header for hamburger menu */}
-        <Box sx={{ 
-          display: { xs: 'flex', lg: 'none' }, 
-          alignItems: 'center', 
-          p: 1, 
+        <Box sx={{
+          display: { xs: 'flex', lg: 'none' },
+          alignItems: 'center',
+          p: 1,
           borderBottom: '1px solid #e0e0e0',
           justifyContent: 'space-between',
           position: 'absolute',
@@ -88,36 +91,40 @@ function App() {
           </IconButton>
         </Box>
         <Box sx={{ flexGrow: 1, mt: { xs: '56px', lg: 0 } }}>
-          <ChatWindow />
+          <ChatWindow conversation={conversation} />
         </Box>
       </Box>
 
       {/* Mobile/Tablet Right Panel Drawer */}
-      <Drawer
-        anchor="right"
-        variant="temporary"
-        open={rightPanelOpen}
-        onClose={handleRightPanelToggle}
-        ModalProps={{
-          keepMounted: true, 
-        }}
-        sx={{
-          display: { xs: 'block', lg: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 300 },
-        }}
-      >
-        <RightPanel />
-      </Drawer>
+      {conversation &&
+        <>
+          <Drawer
+            anchor="right"
+            variant="temporary"
+            open={rightPanelOpen}
+            onClose={handleRightPanelToggle}
+            ModalProps={{
+              keepMounted: true,
+            }}
+            sx={{
+              display: { xs: 'block', lg: 'none' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 300 },
+            }}
+          >
+            <RightPanel conversation={conversation} />
+          </Drawer>
 
-      {/* Desktop Right Panel */}
-      <Box sx={{ 
-        width: '360px', 
-        display: { xs: 'none', lg: 'block' },
-        flexShrink: 0,
-        borderLeft: '1px solid #e0e0e0'
-      }}>
-        <RightPanel />
-      </Box>
+          {/* Desktop Right Panel */}
+          <Box sx={{
+            width: '360px',
+            display: { xs: 'none', lg: 'block' },
+            flexShrink: 0,
+            borderLeft: '1px solid #e0e0e0'
+          }}>
+            <RightPanel conversation={conversation} />
+          </Box>
+        </>
+      }
     </Box>
   )
 }

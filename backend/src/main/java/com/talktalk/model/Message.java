@@ -27,5 +27,6 @@ public class Message extends BaseEntity {
     String content;
     MessageType type;
     MessageStatus status;
+    LocalDateTime editedAt;
     LocalDateTime deletedAt;
 }

@@ -39,6 +39,10 @@ public class Conversations extends BaseEntity {
     String title;
     @Column(name = "cvs_type")
     TypeConversation type;
+    @Column(name = "last_message")
+    String lastMessage;
+    @Column(name = "last_message_at")
+    LocalDateTime lastMessageAt;
     @Column(name = "deleted_at")
     LocalDateTime deletedAt;
 

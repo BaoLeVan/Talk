@@ -1,9 +1,99 @@
-import { Avatar, Badge, Box, Button, FormControl, IconButton, Input, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, Paper, Typography } from '@mui/material'
-import React from 'react'
+import { Avatar, Badge, Box, FormControl, IconButton, Input, InputAdornment, List, ListItem, ListItemAvatar, ListItemButton, ListItemText, Paper, Typography } from '@mui/material'
+import React, { useState } from 'react'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { LogoutOutlined, Search } from '@mui/icons-material';
+import { formatDate, formatTime } from '~/utils/common';
 
-function SideBar() {
+function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
+  const userID = 1;
+  const [conversations, setConversations] = useState([{
+    id: 1,
+    avatar: 'https://i.pravatar.cc/150?u=1',
+    title: 'John Doe',
+    type: 'GROUP',
+    lastMessage: 'Hello',
+    lastMessageAt: formatDate(new Date()),
+    unreadCount: 0,
+    userID: 1,
+    isOnline: false
+  }, {
+    id: 2,
+    avatar: 'https://i.pravatar.cc/150?u=2',
+    title: 'Jane Doe',
+    type: 'PRIVATE',
+    lastMessage: 'Hello',
+    lastMessageAt: formatTime(new Date()),
+    unreadCount: 0,
+    userID: 1,
+    isOnline: false
+  }, {
+    id: 3,
+    avatar: 'https://i.pravatar.cc/150?u=3',
+    title: 'John Doe',
+    type: 'PRIVATE',
+    lastMessage: 'Hello',
+    lastMessageAt: formatDate(new Date()),
+    unreadCount: 0,
+    userID: 3,
+    isOnline: false
+  }, {
+    id: 4,
+    avatar: 'https://i.pravatar.cc/150?u=4',
+    title: 'Jane Doe',
+    type: 'GROUP',
+    lastMessage: 'Hello',
+    lastMessageAt: formatTime(new Date()),
+    unreadCount: 0,
+    userID: 4,
+    isOnline: false
+  }, {
+    id: 5,
+    avatar: 'https://i.pravatar.cc/150?u=5',
+    title: 'John Doe',
+    type: 'PRIVATE',
+    lastMessage: 'Hello',
+    lastMessageAt: formatTime(new Date()),
+    unreadCount: 0,
+    userID: 5,
+    isOnline: false
+  }, {
+    id: 6,
+    avatar: 'https://i.pravatar.cc/150?u=6',
+    title: 'Jane Doe',
+    type: 'GROUP',
+    lastMessage: 'Hello',
+    lastMessageAt: formatDate(new Date()),
+    unreadCount: 0,
+    userID: 6,
+    isOnline: false
+  }, {
+    id: 7,
+    avatar: 'https://i.pravatar.cc/150?u=7',
+    title: 'John Doe',
+    type: 'PRIVATE',
+    lastMessage: 'Hello',
+    lastMessageAt: formatTime(new Date()),
+    unreadCount: 0,
+    userID: 1,
+    isOnline: false
+  }, {
+    id: 8,
+    avatar: 'https://i.pravatar.cc/150?u=8',
+    title: 'Jane Doe',
+    type: 'GROUP',
+    lastMessage: 'Hello',
+    lastMessageAt: formatDate(new Date()),
+    unreadCount: 0,
+    userID: 1,
+    isOnline: false
+  }]);
+
+  const handleListItemClick = (event, index) => {
+    onSelectConversation(index);
+    const result = conversations.find((data) => data.id === index);
+    setConversation(result)
+  };
+
   return (
     <Paper sx={{
       height: '100%',
@@ -62,38 +152,45 @@ function SideBar() {
             position: 'relative',
             overflow: 'auto',
           }}>
-          {[...Array(10)].map((_, index) => (
-            <ListItem alignItems="flex-start">
-              <ListItemAvatar>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
-              </ListItemAvatar>
-              <ListItemText
-                primary="Brunch this weekend?"
-                secondary={
-                  <React.Fragment>
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      sx={{ color: 'text.primary', display: 'inline' }}
-                    >
-                      Random message at 9:44:52 PM
-                    </Typography>
-                  </React.Fragment>
-                }
-              />
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Typography variant='caption' sx={{ color: 'text.secondary', mb: 1.5, mt: 1 }}>2m</Typography>
-                <Badge sx={{
-                  '& .MuiBadge-badge': {
-                    fontSize: '0.8rem',
-                    height: '20px',
-                    fontWeight: 'bold',
+          {conversations.map((conversation, index) => (
+            <ListItemButton
+              sx={{ p: 0 }}
+              selected={selectedIndex === index}
+              onClick={(event) => handleListItemClick(event, index)}
+              key={index}
+            >
+              <ListItem alignItems="flex-start">
+                <ListItemAvatar>
+                  <Avatar alt="Remy Sharp" src={conversation.avatar} />
+                </ListItemAvatar>
+                <ListItemText
+                  primary={conversation.title}
+                  secondary={
+                    <React.Fragment>
+                      {conversation.userID === userID ? `You: ${conversation.lastMessage} • ${conversation.lastMessageAt}` : <Typography
+                        component="span"
+                        variant="body2"
+                        sx={{ color: 'text.primary', display: 'inline' }}
+                      >
+                        {conversation.lastMessage + ' • ' + conversation.lastMessageAt}
+                      </Typography>}
+                    </React.Fragment>
                   }
-                }}
-                  badgeContent={100}
-                  color="primary"></Badge>
-              </Box>
-            </ListItem>
+                />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Typography variant='caption' sx={{ color: 'text.secondary', mb: 1.5, mt: 1 }}>2m</Typography>
+                  <Badge sx={{
+                    '& .MuiBadge-badge': {
+                      fontSize: '0.8rem',
+                      height: '20px',
+                      fontWeight: 'bold',
+                    }
+                  }}
+                    badgeContent={100}
+                    color="primary"></Badge>
+                </Box>
+              </ListItem>
+            </ListItemButton>
           ))}
         </List>
       </Box>
