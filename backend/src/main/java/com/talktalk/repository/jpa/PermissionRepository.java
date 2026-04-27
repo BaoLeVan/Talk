@@ -3,8 +3,9 @@ package com.talktalk.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.talktalk.model.User;
+import com.talktalk.model.Permission;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface PermissionRepository extends JpaRepository<Permission, String> {
+
 }

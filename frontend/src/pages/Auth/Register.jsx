@@ -1,7 +1,7 @@
 import { Box, Button, Card, CardActions, Divider, InputAdornment, Tab, Tabs, TextField, Typography } from '@mui/material'
 import React, { useEffect, useState } from 'react'
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import { EmailOutlined, LockOutlined } from '@mui/icons-material';
+import { EmailOutlined, LockOutlined, PersonOutlined } from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form"
 import { FIELD_REQUIRED_MESSAGE, EMAIL_RULE, EMAIL_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE, PASSWORD_CONFIRMATION_MESSAGE } from '~/utils/validators';
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert';
 import { useNavigate } from 'react-router';
+import { registerUser } from '~/apis';
 
 function Register() {
   const [value, setValue] = useState("Register");
@@ -27,8 +28,15 @@ function Register() {
   }
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleClickShowPassword = (type) => {
+    if (type === 'password') {
+      setShowPassword((show) => !show);
+    } else {
+      setShowConfirmPassword((show) => !show);
+    }
+  };
 
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
@@ -45,7 +53,12 @@ function Register() {
     formState: { errors },
   } = useForm()
 
-  const onSubmit = (data) => console.log(data)
+  const onSubmit = async (data) => {
+    const result = await registerUser(data);
+    if(result) {
+      
+    }
+  }
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Card sx={{
@@ -113,6 +126,37 @@ function Register() {
           <Box >
             <TextField
               fullWidth
+              placeholder='User Name'
+              variant="outlined"
+              error={!!errors['userName']}
+              {...register("userName", {
+                required: FIELD_REQUIRED_MESSAGE,
+                minLength: {
+                  value: 6,
+                  message: 'User name must be at least 6 characters'
+                },
+                maxLength: {
+                  value: 20,
+                  message: 'User name must be at most 20 characters'
+                }
+              })}
+              slotProps={{
+                input: {
+                  startAdornment: <PersonOutlined sx={{ color: 'rgba(255,255,255,0.4)', mr: 1 }} />,
+                  sx: {
+                    borderRadius: '12px',
+                    color: 'white',
+                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    '& fieldset': { border: 'none' }
+                  }
+                }
+              }}
+            />
+            <FieldErrorAlert error={errors} fieldName={'userName'} />
+          </Box>
+          <Box >
+            <TextField
+              fullWidth
               placeholder='Email Address'
               variant="outlined"
               error={!!errors['email']}
@@ -166,7 +210,7 @@ function Register() {
                         aria-label={
                           showPassword ? 'hide the password' : 'display the password'
                         }
-                        onClick={handleClickShowPassword}
+                        onClick={() => handleClickShowPassword('password')}
                         onMouseDown={handleMouseDownPassword}
                         onMouseUp={handleMouseUpPassword}
                         edge="end"
@@ -206,14 +250,14 @@ function Register() {
                     <InputAdornment position="end">
                       <IconButton
                         aria-label={
-                          showPassword ? 'hide the password' : 'display the password'
+                          showConfirmPassword ? 'hide the password' : 'display the password'
                         }
-                        onClick={handleClickShowPassword}
+                        onClick={() => handleClickShowPassword('confirmPassword')}
                         onMouseDown={handleMouseDownPassword}
                         onMouseUp={handleMouseUpPassword}
                         edge="end"
                       >
-                        {showPassword ? <VisibilityOff sx={{ color: 'rgba(255,255,255,0.4)' }} /> : <Visibility sx={{ color: 'rgba(255,255,255,0.4)' }} />}
+                        {showConfirmPassword ? <VisibilityOff sx={{ color: 'rgba(255,255,255,0.4)' }} /> : <Visibility sx={{ color: 'rgba(255,255,255,0.4)' }} />}
                       </IconButton>
                     </InputAdornment>
                   )

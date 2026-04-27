@@ -3,8 +3,10 @@ import React, { useState } from 'react'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { LogoutOutlined, Search } from '@mui/icons-material';
 import { formatDate, formatTime } from '~/utils/common';
+import { useNavigate } from 'react-router';
 
 function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
+  const navigate = useNavigate();
   const userID = 1;
   const [conversations, setConversations] = useState([{
     id: 1,
@@ -33,7 +35,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
     type: 'PRIVATE',
     lastMessage: 'Hello',
     lastMessageAt: formatDate(new Date()),
-    unreadCount: 0,
+    unreadCount: 5,
     userID: 3,
     isOnline: false
   }, {
@@ -87,6 +89,10 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
     userID: 1,
     isOnline: false
   }]);
+
+  const handleLogout = () => {
+    navigate('/login')
+  }
 
   const handleListItemClick = (event, index) => {
     onSelectConversation(index);
@@ -159,36 +165,72 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
               onClick={(event) => handleListItemClick(event, index)}
               key={index}
             >
-              <ListItem alignItems="flex-start">
-                <ListItemAvatar>
-                  <Avatar alt="Remy Sharp" src={conversation.avatar} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={conversation.title}
-                  secondary={
-                    <React.Fragment>
-                      {conversation.userID === userID ? `You: ${conversation.lastMessage} • ${conversation.lastMessageAt}` : <Typography
-                        component="span"
-                        variant="body2"
-                        sx={{ color: 'text.primary', display: 'inline' }}
-                      >
-                        {conversation.lastMessage + ' • ' + conversation.lastMessageAt}
-                      </Typography>}
-                    </React.Fragment>
-                  }
-                />
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Typography variant='caption' sx={{ color: 'text.secondary', mb: 1.5, mt: 1 }}>2m</Typography>
-                  <Badge sx={{
-                    '& .MuiBadge-badge': {
-                      fontSize: '0.8rem',
-                      height: '20px',
-                      fontWeight: 'bold',
-                    }
-                  }}
-                    badgeContent={100}
-                    color="primary"></Badge>
+              <ListItem sx={{ width: '100%' }}>
+
+                {/* 1 */}
+                <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                  <ListItemAvatar>
+                    <Avatar alt="Remy Sharp" src={conversation.avatar} />
+                  </ListItemAvatar>
                 </Box>
+
+                {/* 3 */}
+                <Box sx={{ flex: 4 }}>
+                  <ListItemText
+                    primary={
+                      conversation.unreadCount > 0 ? <Typography sx={{
+                        fontWeight: 'bold',
+                        fontSize: '1rem',
+                        lineHeight: '1.5',
+                        color: 'text.secondary'
+                      }} >{conversation.title}</Typography> : conversation.title
+                    }
+                    secondary={
+                      conversation.userID === userID
+                        ? `You: ${conversation.lastMessage} • ${conversation.lastMessageAt}`
+                        : (
+                          conversation.unreadCount > 0 ?
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              sx={{
+                                color: 'text.secondary'
+                              }}
+                            >
+                              {conversation.lastMessage + ' • ' + conversation.lastMessageAt}
+                            </Typography> :
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              sx={{
+                                color: 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {conversation.lastMessage + ' • ' + conversation.lastMessageAt}
+                            </Typography>
+                        )
+                    }
+                  />
+                </Box>
+
+                {/* 1 */}
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Badge
+                    badgeContent={conversation.unreadCount}
+                    color="primary"
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        fontSize: '0.8rem',
+                        height: '20px',
+                        fontWeight: 'bold'
+                      }
+                    }}
+                  />
+                </Box>
+
               </ListItem>
             </ListItemButton>
           ))}
@@ -208,7 +250,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
           <Typography>User Name</Typography>
         </Box>
         <Box>
-          <IconButton size="large">
+          <IconButton size="large" onClick={handleLogout}>
             <LogoutOutlined></LogoutOutlined>
           </IconButton>
         </Box>

@@ -1,6 +1,7 @@
 package com.talktalk.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -9,10 +10,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.talktalk.exception.enums.MessageStatus;
-import com.talktalk.exception.enums.MessageType;
 
 @Document(collection = "messages")
 @Getter
@@ -25,8 +26,8 @@ public class Message extends BaseEntity {
     String conversationId;
     String senderId;
     String content;
-    MessageType type;
     MessageStatus status;
     LocalDateTime editedAt;
     LocalDateTime deletedAt;
+    List<Attachment> attachments;
 }

@@ -3,16 +3,18 @@ import { Box, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
+import { TYPE_MESSAGE } from '~/utils/common'
 
 function ChatWindow({ conversation }) {
   const [messages, setMessages] = useState({
-    text: '',
+    content: '' || [],
     time: '',
     isOwnMessage: false,
     senderName: '',
     avatar: '',
     showAvatar: false,
-    status: ''
+    status: '',
+    type: TYPE_MESSAGE.TEXT || TYPE_MESSAGE.IMAGE || TYPE_MESSAGE.VIDEO || TYPE_MESSAGE.FILE
   })
 
   if (!conversation) {
@@ -76,10 +78,9 @@ function ChatWindow({ conversation }) {
       <Box sx={{ width: '100%', bgcolor: 'white' }}>
         <HeaderChat />
       </Box>
-      <Box sx={{ height: '100%', width: '100%', overflowY: 'auto', py: 2 }}>
+      <Box sx={{ flexGrow: 1, height: 0, width: '100%', overflowY: 'auto', py: 2 }}>
         <MessageItem messages={messages} setMessages={setMessages} />
       </Box>
-
       <Box sx={{ width: '100%', bgcolor: 'white' }}>
         <MessageInput setMessages={setMessages} />
       </Box>

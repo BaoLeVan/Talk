@@ -181,8 +181,8 @@ function RightPanel({ conversation }) {
                                 <ListItemButton
                                     key={index}
                                     sx={{ p: 0 }}
-                                    selected={selectedIndex === 0}
-                                    onClick={(event) => handleListItemClick(event, 0)}
+                                    selected={selectedIndex === index}
+                                    onClick={(event) => handleListItemClick(event, index)}
                                 >
                                     <ListItem alignItems="flex-start">
                                         <ListItemAvatar>
