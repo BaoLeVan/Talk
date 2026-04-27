@@ -3,6 +3,8 @@ package com.talktalk.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.talktalk.exception.enums.TypeConversation;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,32 +24,28 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @Builder
-@Table(name = "users")
+@Table(name = "conversations")
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class User extends BaseEntity {
+public class Conversations extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "usr_id")
+    @Column(name = "cvs_id")
     Long id;
-    @Column(name = "usr_avatar")
+    @Column(name = "cvs_avatar")
     String avatar;
-    @Column(name = "usr_full_name")
-    String fullName;
-    @Column(name = "usr_user_name")
-    String userName;
-    @Column(name = "usr_email", unique = true, nullable = false)
-    String email;
-    @Column(name = "usr_password", nullable = false)
-    String password;
-    @Column(name = "is_verified")
-    Boolean isVerified;
-    @Column(name = "verification_token")
-    String verificationToken;
+    @Column(name = "cvs_title")
+    String title;
+    @Column(name = "cvs_type")
+    TypeConversation type;
+    @Column(name = "last_message")
+    String lastMessage;
+    @Column(name = "last_message_at")
+    LocalDateTime lastMessageAt;
     @Column(name = "deleted_at")
     LocalDateTime deletedAt;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "conversations")
     List<Conversations_members> conversationsMembers;
 }

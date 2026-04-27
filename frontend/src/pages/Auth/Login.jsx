@@ -9,6 +9,8 @@ import { useForm } from "react-hook-form"
 import { FIELD_REQUIRED_MESSAGE, EMAIL_RULE, EMAIL_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE } from '~/utils/validators';
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert';
 import { useNavigate } from 'react-router';
+import { login } from '~/apis';
+import { toast } from 'react-toastify';
 
 function Login() {
     const [value, setValue] = useState("Login");
@@ -45,7 +47,13 @@ function Login() {
         formState: { errors },
     } = useForm()
 
-    const onSubmit = (data) => console.log(data)
+    const onSubmit = async (data) => {
+        const result = await login(data);
+        if (result) {
+            navigate("/");
+            toast.success("Login successfully");
+        }
+    }
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
