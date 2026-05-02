@@ -4,6 +4,7 @@ import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
 import { TYPE_MESSAGE } from '~/utils/common'
+import { getMessagesByConversationId } from '~/apis'
 
 function ChatWindow({ conversation }) {
   const [messages, setMessages] = useState({
@@ -16,6 +17,18 @@ function ChatWindow({ conversation }) {
     status: '',
     type: TYPE_MESSAGE.TEXT || TYPE_MESSAGE.IMAGE || TYPE_MESSAGE.VIDEO || TYPE_MESSAGE.FILE
   })
+
+  useEffect(() => {
+    if (conversation) {
+      const getMessages = async () => {
+        const result = await getMessagesByConversationId(conversation.id);
+        if (result) {
+          setMessages(result.data);
+        }
+      }
+      getMessages();
+    }
+  }, [conversation]);
 
   if (!conversation) {
     return (
@@ -76,7 +89,7 @@ function ChatWindow({ conversation }) {
       bgcolor: '#f8f9fa',
     }}>
       <Box sx={{ width: '100%', bgcolor: 'white' }}>
-        <HeaderChat />
+        <HeaderChat conversation={conversation} />
       </Box>
       <Box sx={{ flexGrow: 1, height: 0, width: '100%', overflowY: 'auto', py: 2 }}>
         <MessageItem messages={messages} setMessages={setMessages} />

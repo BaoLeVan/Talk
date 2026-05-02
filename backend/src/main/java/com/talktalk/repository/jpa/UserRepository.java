@@ -1,4 +1,4 @@
-package com.talktalk.repository;
+package com.talktalk.repository.jpa;
 
 import java.util.Optional;
 
@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.talktalk.model.User;
+import com.talktalk.model.entity.User;
 
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.talktalk.dto.request.PermissionRequest;
@@ -11,8 +12,8 @@ import com.talktalk.dto.response.PermissionResponse;
 import com.talktalk.exception.AppException;
 import com.talktalk.exception.ErrorCode;
 import com.talktalk.mapper.PermissionMapper;
-import com.talktalk.model.Permission;
-import com.talktalk.repository.PermissionRepository;
+import com.talktalk.model.entity.Permission;
+import com.talktalk.repository.jpa.PermissionRepository;
 import com.talktalk.service.PermissionService;
 
 import jakarta.transaction.Transactional;
@@ -30,6 +31,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public PermissionResponse createPermission(PermissionRequest permissionRequest) {
         if (Objects.isNull(permissionRequest)) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
@@ -45,6 +47,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<PermissionResponse> getAllPermissions() {
         return permissionRepository.findAll().stream()
                 .map(permissionMapper::toPermissionResponse)

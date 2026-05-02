@@ -10,6 +10,7 @@ import { FIELD_REQUIRED_MESSAGE, EMAIL_RULE, EMAIL_RULE_MESSAGE, PASSWORD_RULE, 
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert';
 import { useNavigate } from 'react-router';
 import { registerUser } from '~/apis';
+import { toast } from 'react-toastify';
 
 function Register() {
   const [value, setValue] = useState("Register");
@@ -54,9 +55,13 @@ function Register() {
   } = useForm()
 
   const onSubmit = async (data) => {
-    const result = await registerUser(data);
-    if(result) {
-      
+    try {
+      const result = await registerUser(data);
+      if(result) {
+        navigate("/verify-otp", { state: { email: data.email } });
+      }
+    } catch (error) {
+      toast.error("Đăng ký thất bại. Vui lòng thử lại.");
     }
   }
   return (

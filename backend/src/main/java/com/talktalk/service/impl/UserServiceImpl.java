@@ -2,26 +2,28 @@ package com.talktalk.service.impl;
 
 import java.util.Objects;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import com.talktalk.dto.response.UserResponse;
 import com.talktalk.exception.AppException;
 import com.talktalk.exception.ErrorCode;
-import com.talktalk.model.User;
-import com.talktalk.repository.UserRepository;
+import com.talktalk.mapper.UserMapper;
+import com.talktalk.model.entity.User;
+import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.service.UserService;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
 
-    @Autowired
     UserRepository userRepository;
+    UserMapper userMapper;
 
     @Override
     public User save(User user) {
@@ -36,13 +38,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(Long id) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }
 
     @Override
-    public User getById(String id) {
+    public User getById(Long id) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getById'");
     }
@@ -69,4 +71,10 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
+    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
+    public UserResponse findByEmail(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return userMapper.toUserResponse(user);
+    }
 }

@@ -1,4 +1,4 @@
-package com.talktalk.model;
+package com.talktalk.model.document;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.talktalk.exception.enums.MessageStatus;
+import com.talktalk.model.entity.BaseEntity;
 
 @Document(collection = "messages")
 @Getter
@@ -27,7 +28,6 @@ public class Message extends BaseEntity {
     String senderId;
     String content;
     MessageStatus status;
-    LocalDateTime editedAt;
     LocalDateTime deletedAt;
     List<Attachment> attachments;
 }

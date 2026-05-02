@@ -2,6 +2,7 @@ import React from 'react'
 import { useLocation } from 'react-router'
 import Login from './Login';
 import Register from './Register';
+import VerifyOtp from './VerifyOtp';
 import { Box } from '@mui/material';
 
 function Auth() {
@@ -9,6 +10,7 @@ function Auth() {
 
     const isLogin = location.pathname === "/login";
     const isRegister = location.pathname === "/register";
+    const isVerifyOtp = location.pathname === "/verify-otp";
 
     return (
         <Box
@@ -23,6 +25,7 @@ function Auth() {
             }}>
             {isLogin && <Login />}
             {isRegister && <Register />}
+            {isVerifyOtp && <VerifyOtp />}
         </Box>
     )
 }

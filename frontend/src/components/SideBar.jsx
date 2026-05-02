@@ -1,103 +1,54 @@
-import { Avatar, Badge, Box, FormControl, IconButton, Input, InputAdornment, List, ListItem, ListItemAvatar, ListItemButton, ListItemText, Paper, Typography } from '@mui/material'
-import React, { useState } from 'react'
+import { Avatar, Badge, Box, CircularProgress, FormControl, IconButton, Input, InputAdornment, List, ListItem, ListItemAvatar, ListItemButton, ListItemText, Paper, Typography } from '@mui/material'
+import React, { useEffect, useState } from 'react'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { LogoutOutlined, Search } from '@mui/icons-material';
-import { formatDate, formatTime } from '~/utils/common';
+import { formatTimeChat } from '~/utils/common';
 import { useNavigate } from 'react-router';
+import { getAllConversationsByUser, logout, setAccessToken } from '~/apis';
+import { toast } from 'react-toastify';
+import { useUser } from '~/components/context/UserContext';
+import useDebounce from './customHook/useDebounce';
 
 function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
   const navigate = useNavigate();
-  const userID = 1;
-  const [conversations, setConversations] = useState([{
-    id: 1,
-    avatar: 'https://i.pravatar.cc/150?u=1',
-    title: 'John Doe',
-    type: 'GROUP',
-    lastMessage: 'Hello',
-    lastMessageAt: formatDate(new Date()),
-    unreadCount: 0,
-    userID: 1,
-    isOnline: false
-  }, {
-    id: 2,
-    avatar: 'https://i.pravatar.cc/150?u=2',
-    title: 'Jane Doe',
-    type: 'PRIVATE',
-    lastMessage: 'Hello',
-    lastMessageAt: formatTime(new Date()),
-    unreadCount: 0,
-    userID: 1,
-    isOnline: false
-  }, {
-    id: 3,
-    avatar: 'https://i.pravatar.cc/150?u=3',
-    title: 'John Doe',
-    type: 'PRIVATE',
-    lastMessage: 'Hello',
-    lastMessageAt: formatDate(new Date()),
-    unreadCount: 5,
-    userID: 3,
-    isOnline: false
-  }, {
-    id: 4,
-    avatar: 'https://i.pravatar.cc/150?u=4',
-    title: 'Jane Doe',
-    type: 'GROUP',
-    lastMessage: 'Hello',
-    lastMessageAt: formatTime(new Date()),
-    unreadCount: 0,
-    userID: 4,
-    isOnline: false
-  }, {
-    id: 5,
-    avatar: 'https://i.pravatar.cc/150?u=5',
-    title: 'John Doe',
-    type: 'PRIVATE',
-    lastMessage: 'Hello',
-    lastMessageAt: formatTime(new Date()),
-    unreadCount: 0,
-    userID: 5,
-    isOnline: false
-  }, {
-    id: 6,
-    avatar: 'https://i.pravatar.cc/150?u=6',
-    title: 'Jane Doe',
-    type: 'GROUP',
-    lastMessage: 'Hello',
-    lastMessageAt: formatDate(new Date()),
-    unreadCount: 0,
-    userID: 6,
-    isOnline: false
-  }, {
-    id: 7,
-    avatar: 'https://i.pravatar.cc/150?u=7',
-    title: 'John Doe',
-    type: 'PRIVATE',
-    lastMessage: 'Hello',
-    lastMessageAt: formatTime(new Date()),
-    unreadCount: 0,
-    userID: 1,
-    isOnline: false
-  }, {
-    id: 8,
-    avatar: 'https://i.pravatar.cc/150?u=8',
-    title: 'Jane Doe',
-    type: 'GROUP',
-    lastMessage: 'Hello',
-    lastMessageAt: formatDate(new Date()),
-    unreadCount: 0,
-    userID: 1,
-    isOnline: false
-  }]);
+  const [searchConversation, setSearchConversation] = useState('');
+  const { user, isLoading, setIsLoading } = useUser();
+  const [conversations, setConversations] = useState([]);
 
-  const handleLogout = () => {
-    navigate('/login')
+  const debouncedValue = useDebounce(searchConversation, 500);
+
+  useEffect(() => {
+    if (user) {
+      setIsLoading(true);
+      const getAllConversations = async () => {
+        const result = await getAllConversationsByUser(user.id, debouncedValue);
+        if (result) {
+          setConversations(result.data);
+        }
+        setIsLoading(false);
+      }
+      getAllConversations();
+    }
+  }, [user, debouncedValue]);
+
+  const handleLogout = async () => {
+    setAccessToken(null);
+    const result = await logout();
+    if (result?.message) {
+      toast.success(result.message);
+    }
+    localStorage.removeItem('user');
+    navigate('/login');
   }
 
   const handleListItemClick = (event, index) => {
     onSelectConversation(index);
     const result = conversations.find((data) => data.id === index);
-    setConversation(result)
+    setConversation(result);
+  };
+
+  const handleSearch = (event) => {
+    setSearchConversation(event.target.value);
   };
 
   return (
@@ -145,6 +96,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                   <Search />
                 </InputAdornment>
               }
+              onChange={(event) => handleSearch(event)}
             />
           </FormControl>
         </Box>
@@ -158,12 +110,16 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
             position: 'relative',
             overflow: 'auto',
           }}>
-          {conversations.map((conversation, index) => (
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <CircularProgress />
+            </Box>
+          ) : conversations?.map((conversation) => (
             <ListItemButton
               sx={{ p: 0 }}
-              selected={selectedIndex === index}
-              onClick={(event) => handleListItemClick(event, index)}
-              key={index}
+              selected={selectedIndex === conversation.id}
+              onClick={(event) => handleListItemClick(event, conversation.id)}
+              key={conversation.id}
             >
               <ListItem sx={{ width: '100%' }}>
 
@@ -186,31 +142,59 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                       }} >{conversation.title}</Typography> : conversation.title
                     }
                     secondary={
-                      conversation.userID === userID
+                      conversation.userID === user?.id
                         ? `You: ${conversation.lastMessage} • ${conversation.lastMessageAt}`
                         : (
                           conversation.unreadCount > 0 ?
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              sx={{
-                                color: 'text.secondary'
-                              }}
-                            >
-                              {conversation.lastMessage + ' • ' + conversation.lastMessageAt}
-                            </Typography> :
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              sx={{
-                                color: 'text.primary',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {conversation.lastMessage + ' • ' + conversation.lastMessageAt}
-                            </Typography>
+                            <span style={{ display: 'flex' }} >
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{
+                                  color: 'text.secondary',
+                                  display: 'inline-block',
+                                  maxWidth: '80%',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {conversation.lastMessage}
+                              </Typography>
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{
+                                  color: 'text.secondary'
+                                }}>
+                                {' • ' + formatTimeChat(conversation.lastMessageAt)}
+                              </Typography>
+                            </span>
+                            :
+                            <span style={{ display: 'flex' }}>
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{
+                                  color: 'text.primary',
+                                  display: 'inline-block',
+                                  maxWidth: '80%',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {conversation.lastMessage}
+                              </Typography>
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{
+                                  color: 'text.primary'
+                                }}>
+                                {' • ' + formatTimeChat(conversation.lastMessageAt)}
+                              </Typography>
+                            </span>
                         )
                     }
                   />
@@ -246,8 +230,8 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
         flexShrink: 0
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
-          <Typography>User Name</Typography>
+          <Avatar alt="Remy Sharp" src={user?.avatar} />
+          <Typography>{user?.userName}</Typography>
         </Box>
         <Box>
           <IconButton size="large" onClick={handleLogout}>
