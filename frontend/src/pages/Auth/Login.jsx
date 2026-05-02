@@ -11,9 +11,11 @@ import FieldErrorAlert from '~/components/Form/FieldErrorAlert';
 import { useNavigate } from 'react-router';
 import { login } from '~/apis';
 import { toast } from 'react-toastify';
+import { useUser } from '~/components/context/UserContext';
 
 function Login() {
     const [value, setValue] = useState("Login");
+    const { setUser } = useUser();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -43,17 +45,19 @@ function Login() {
     const {
         register,
         handleSubmit,
-        watch,
         formState: { errors },
     } = useForm()
 
     const onSubmit = async (data) => {
         const result = await login(data);
         if (result) {
+            setUser(result.data.user);
+            localStorage.setItem("user", JSON.stringify(result.data.user));
             navigate("/");
             toast.success("Login successfully");
         }
-    }
+    };
+
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>

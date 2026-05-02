@@ -2,9 +2,9 @@ package com.talktalk.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,13 +26,10 @@ public class SecurityConfig {
     private final String[] AUTH_WHITELIST = {
             "/api/v1/auth/register",
             "/api/v1/auth/verify-otp",
+            "/api/v1/auth/resend-otp",
             "/api/v1/auth/login",
-            "/api/v1/auth/introspect",
             "/api/v1/auth/logout",
-            "/api/v1/auth/refresh",
-            // Test API
-            "/api/v1/roles",
-            "/api/v1/permissions"
+            "/api/v1/auth/refresh"
     };
 
     @Bean
@@ -40,13 +37,18 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(10);
     }
 
+    @Autowired
+    CustomeJwtDecoder jwtDecoder;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httphttpSecurity) {
         httphttpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AUTH_WHITELIST).permitAll()
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)
+                        .jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return httphttpSecurity.build();
     }
 

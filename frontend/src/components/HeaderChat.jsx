@@ -4,7 +4,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import CallIcon from '@mui/icons-material/Call';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-function HeaderChat() {
+function HeaderChat({ conversation }) {
     return (
         <Box sx={{
             display: 'flex',
@@ -12,12 +12,14 @@ function HeaderChat() {
             py: 2,
             alignItems: 'center'
         }}>
-            <Avatar />
+            <Avatar src={conversation?.avatar || null}>
+                
+            </Avatar>
             <Box sx={{
                 flexGrow: 1,
                 ml: 2
             }}>
-                <Typography variant="h6" color="text.primary">User Name</Typography>
+                <Typography variant="h6" color="text.primary">{conversation?.title}</Typography>
                 <Typography variant="body2" color="text.secondary">Online</Typography>
             </Box>
             <Box>

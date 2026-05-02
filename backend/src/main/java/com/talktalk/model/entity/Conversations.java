@@ -1,4 +1,4 @@
-package com.talktalk.model;
+package com.talktalk.model.entity;
 
 import java.time.LocalDateTime;
 import java.util.List;

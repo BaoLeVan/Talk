@@ -3,7 +3,7 @@ spring:
     name: talk
   data:
     mongodb:
-      uri: mongodb+srv://${MONGO_ROOT_USERNAME:warcraftkun}:${MONGO_ROOT_PASSWORD:CmeYUkN0DJHeVBmH}@cluster0-baole.6bydbes.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0-BaoLe
+      uri: mongodb+srv://warcraftkun:CmeYUkN0DJHeVBmH@cluster0-baole.6bydbes.mongodb.net/talk?retryWrites=true&w=majority&appName=Cluster0-BaoLe/talktalk
   datasource:
     url: jdbc:postgresql://localhost:5432/talktalk
     username: postgres
@@ -29,6 +29,6 @@ spring:
 
 jwt:
   secret: Do8q4JpVmM0UST7pIvpGUMXdXMH0wlF0z6RHXm6d1XQ=
-  validDuration: 15m
+  validDuration: 60000m
   refreshableDuration: 7d
 

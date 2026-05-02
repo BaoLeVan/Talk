@@ -16,6 +16,33 @@ export const formatTime = (date) => {
     return `${hour}:${minute}`;
 }
 
+export const formatTimeChat = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffInSeconds = Math.floor((now - past) / 1000);
+
+    // Nếu thời gian không hợp lệ hoặc ở tương lai
+    if (diffInSeconds < 0) return 'Just now';
+
+    // Các mốc thời gian tính bằng giây
+    const minutes = Math.floor(diffInSeconds / 60);
+    const hours = Math.floor(diffInSeconds / 3600);
+    const days = Math.floor(diffInSeconds / 86400);
+    const weeks = Math.floor(diffInSeconds / 604800);
+
+    if (diffInSeconds < 60) {
+        return 'Just now';
+    } else if (minutes < 60) {
+        return `${minutes}m`;
+    } else if (hours < 24) {
+        return `${hours}h`;
+    } else if (days < 7) {
+        return `${days}d`;
+    } else {
+        return `${weeks}w`;
+    }
+}
+
 export const acceptFilesValidator = (file) => {
     const maxSizeBytes = 26214400; // 25MB
     if (file.size > maxSizeBytes) {

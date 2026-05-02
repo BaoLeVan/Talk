@@ -12,28 +12,33 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum ErrorCode {
 
-    NOT_FOUND(404, "Not Found", HttpStatus.NOT_FOUND),
-    INVALID_REQUEST(400, "Invalid request", HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED(401, "Unauthorized", HttpStatus.UNAUTHORIZED),
-    FORBIDDEN(403, "Forbidden", HttpStatus.FORBIDDEN),
-    INTERNAL_SERVER_ERROR(500, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
-    TOKEN_GENERATION_FAILED(500, "Token generation failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOT_FOUND(600, "Not Found", HttpStatus.NOT_FOUND),
+    INVALID_REQUEST(601, "Invalid request", HttpStatus.BAD_REQUEST),
 
+    // Token
+    UNAUTHORIZED(700, "Unauthorized", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN(701, "Forbidden", HttpStatus.FORBIDDEN),
+    INTERNAL_SERVER_ERROR(702, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
+    TOKEN_GENERATION_FAILED(703, "Token generation failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    UNAUTHENTICATED(704, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    
     // Permission
-    PERMISSION_EXIST(400, "Permission already exists", HttpStatus.BAD_REQUEST),
-    PERMISSION_NOT_FOUND(404, "Permission not found", HttpStatus.NOT_FOUND),
+    PERMISSION_EXIST(800, "Permission already exists", HttpStatus.BAD_REQUEST),
+    PERMISSION_NOT_FOUND(801, "Permission not found", HttpStatus.NOT_FOUND),
 
     // Role
-    ROLE_EXIST(400, "Role already exists", HttpStatus.BAD_REQUEST),
+    ROLE_EXIST(900, "Role already exists", HttpStatus.BAD_REQUEST),
 
     // User
-    USER_EXIST(400, "User already exists", HttpStatus.BAD_REQUEST),
-    EMAIL_EXIST(400, "Email already exists", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
-    USER_NOT_VERIFIED(400, "User not verified", HttpStatus.BAD_REQUEST),
+    USER_EXIST(1000, "User already exists", HttpStatus.BAD_REQUEST),
+    EMAIL_EXIST(1001, "Email already exists", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND(1002, "User not found", HttpStatus.NOT_FOUND),
+    USER_NOT_VERIFIED(1003, "User not verified", HttpStatus.BAD_REQUEST),
+    USER_ALREADY_VERIFIED(1004, "User already verified", HttpStatus.BAD_REQUEST),
+    PASSWORD_WRONG(1005, "Password is wrong", HttpStatus.BAD_REQUEST),
 
     // Mail
-    FAILED_TO_SEND_OTP(500, "Failed to send OTP", HttpStatus.INTERNAL_SERVER_ERROR);
+    FAILED_TO_SEND_OTP(1100, "Failed to send OTP", HttpStatus.INTERNAL_SERVER_ERROR);
 
     int code;
     String message;

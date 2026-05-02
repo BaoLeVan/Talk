@@ -1,74 +1,69 @@
-# Talk Project - CLAUDE.md
+# CLAUDE.md
 
-## Tech Stack
-- **Backend**: 
-  - Java 21 & Spring Boot 4.0.5
-  - Spring Data JPA (PostgreSQL - Users, Rooms, Metadata)
-  - Spring Data MongoDB (Message History, Chat Logs)
-  - Spring Security (JWT / OAuth2 Resource Server)
-  - Redis (Caching, Session Management & **WebSocket Pub/Sub**)
-  - WebSocket (STOMP over SockJS)
-  - MapStruct & Lombok
-- **Frontend**:
-  - React 19 (Vite 8)
-  - Material UI (MUI v7)
-  - React Router v7
-  - State Management: **TanStack Query (React Query)**
-  - Real-time: **@stomp/stompjs** & **sockjs-client**
-  - Form: React Hook Form + Zod
-- **Infrastructure**:
-  - Docker & Docker Compose
-  - Nginx (Reverse Proxy with WebSocket support)
-  - Databases: PostgreSQL, MongoDB, Redis
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-## Architecture
-### Backend Structure (`com.talktalk`)
-- `.controller`: REST API endpoints.
-- `.service`: Business logic interfaces.
-- `.service.impl`: Business logic implementations.
-- `.repository.jpa`: PostgreSQL repositories.
-- `.repository.mongo`: MongoDB repositories (Optimized for chat history).
-- `.model.entity`: PostgreSQL entities (RDBMS).
-- `.model.document`: MongoDB documents (NoSQL).
-- `.dto`: Data Transfer Objects for API requests/responses.
-- `.messaging`: WebSocket/STOMP handlers and message distribution logic.
-- `.config`: System configurations (Security, WebSocket, Redis, etc.).
-- `.exception`: Custom exception handling & `ErrorCode` enum.
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-### Frontend Structure (`src/`)
-- `/apis`: API definitions and Axios instances.
-- `/components`: Reusable UI components (Common, Layout, Chat).
-- `/hooks`: Custom React hooks (e.g., `useSocket`, `useAuth`).
-- `/pages`: Main page components.
-- `/styles`: Global styles and MUI theme customization.
-- `/utils`: Helper functions, constants, and validation schemas.
+## 1. Think Before Coding
 
-## Conventions
-### Naming & Coding Style
-- **Java**: `PascalCase` for classes, `camelCase` for methods/variables.
-- **JavaScript/JSX**: `PascalCase` for components, `camelCase` for hooks/functions.
-- **Database**: `snake_case` for PostgreSQL columns; `camelCase` for MongoDB fields.
-- **REST API**: `/api/v1/resource` style, plural nouns for collections.
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-### Real-time Standards
-- **Protocol**: Use STOMP over SockJS for robust WebSocket connections.
-- **Payload**: All real-time messages must include `senderId`, `roomId`, `messageType`, and `timestamp`.
-- **Optimization**: Use **Optimistic UI** updates for message sending to improve user experience.
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-### General Rules
-- Never expose Entities/Documents directly; always use **DTOs**.
-- Handle all business logic in the `Service` layer, keep `Controllers` lean.
-- Centralized error handling via `GlobalExceptionHandler` (Backend) and `Error Boundaries` (Frontend).
+## 2. Simplicity First
 
-## Important Files
-- `docker-compose.yml`: Main entry point for local development stack.
-- `backend/src/main/resources/application.yaml`: Core configurations (DBs, JWT, Broker).
-- `nginx/talktalk.conf`: Nginx configuration with `Upgrade` and `Connection` headers for WS.
-- `frontend/vite.config.js`: Vite build and dev-proxy settings.
+**Minimum code that solves the problem. Nothing speculative.**
 
-## Development Commands
-- **Run all services**: `docker-compose up -d`
-- **Backend (Dev)**: `./mvnw spring-boot:run`
-- **Frontend (Dev)**: `npm run dev`
-- **Build Backend**: `./mvnw clean package -DskipTests`
-- **Build Frontend**: `npm run build`
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+## 5. Execution Policy
+
+- After completing the requested changes, do not run a project build unless explicitly requested.

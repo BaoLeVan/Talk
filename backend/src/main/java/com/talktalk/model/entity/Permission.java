@@ -1,4 +1,4 @@
-package com.talktalk.model;
+package com.talktalk.model.entity;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

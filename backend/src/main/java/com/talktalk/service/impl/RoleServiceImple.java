@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.talktalk.dto.request.RoleRequest;
@@ -11,10 +12,10 @@ import com.talktalk.dto.response.RoleResponse;
 import com.talktalk.exception.AppException;
 import com.talktalk.exception.ErrorCode;
 import com.talktalk.mapper.RoleMapper;
-import com.talktalk.model.Permission;
-import com.talktalk.model.Role;
-import com.talktalk.repository.PermissionRepository;
-import com.talktalk.repository.RoleRepository;
+import com.talktalk.model.entity.Permission;
+import com.talktalk.model.entity.Role;
+import com.talktalk.repository.jpa.PermissionRepository;
+import com.talktalk.repository.jpa.RoleRepository;
 import com.talktalk.service.RoleService;
 
 import jakarta.transaction.Transactional;
@@ -33,6 +34,7 @@ public class RoleServiceImple implements RoleService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public RoleResponse createRole(RoleRequest roleRequest) {
         if (roleRequest == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
@@ -52,6 +54,7 @@ public class RoleServiceImple implements RoleService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<RoleResponse> getAllRoles() {
         return roleRepository.findAll().stream()
                 .map(roleMapper::toRoleResponse)
