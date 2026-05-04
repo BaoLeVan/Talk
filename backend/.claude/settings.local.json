@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill //PID 6616 //F)",
+      "Read(//d/Coding/Project/**)",
+      "Bash(ls -la src/main/java/com/talktalk/config/WebSocketConfig.java)"
+    ]
+  }
+}

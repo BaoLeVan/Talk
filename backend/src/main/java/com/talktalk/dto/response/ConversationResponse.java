@@ -17,10 +17,14 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ConversationResponse {
-    Long id;
-    String avatar;
-    String title;
-    TypeConversation type;
-    String lastMessage;
-    LocalDateTime lastMessageAt;
+    Long conversationId;
+    String conversationAvatar;
+    String conversationTitle;
+    TypeConversation conversationType;
+    String conversationLastMessage;
+    LocalDateTime conversationLastMessageAt;
+
+    Long userId;
+    String userName;
+    String userAvatar;
 }

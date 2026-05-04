@@ -8,3 +8,8 @@ if (process.env.BUILD_MODE === "production") {
 }
 
 export const API_ROOT = apiRoot;
+
+export const TYPE = {
+    PRIVATE: 'PRIVATE',
+    GROUP: 'GROUP'
+}

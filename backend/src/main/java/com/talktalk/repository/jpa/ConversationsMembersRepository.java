@@ -3,11 +3,15 @@ package com.talktalk.repository.jpa;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.talktalk.dto.response.RoleUserInConversation;
 import com.talktalk.model.entity.Conversations_members;
+
+import jakarta.transaction.Transactional;
 
 @Repository
 public interface ConversationsMembersRepository extends JpaRepository<Conversations_members, Long> {
@@ -17,4 +21,17 @@ public interface ConversationsMembersRepository extends JpaRepository<Conversati
             "WHERE cm.user.id = :userId AND cm.leftAt IS NULL AND c.deletedAt IS NULL " +
             "ORDER BY c.lastMessageAt DESC")
     List<Conversations_members> findAllByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Conversations_members cm SET cm.leftAt = CURRENT_TIMESTAMP WHERE cm.conversations.id = :conversationId AND cm.user.id = :userDeleteId")
+    void removeMemberInGroup(@Param("conversationId") Long conversationId, @Param("userDeleteId") Long userDeleteId);
+
+    @Query("SELECT new com.talktalk.dto.response.RoleUserInConversation(cm.user.id, cm.user.userName, cm.role) FROM Conversations_members cm "
+            +
+            "WHERE cm.conversations.id = :conversationId AND cm.user.id = :userId AND cm.leftAt IS NULL AND cm.conversations.deletedAt IS NULL")
+    RoleUserInConversation getRoleUserInConversation(@Param("conversationId") Long conversationId,
+            @Param("userId") Long userId);
+
+    boolean existsByConversationsIdAndUserIdAndLeftAtIsNull(Long conversationId, Long userId);
 }

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw *)",
+      "Bash(./backend/mvnw *)",
+      "Bash(npm *)",
+      "Bash(git *)",
+      "Bash(mvn verify *)"
+    ]
+  }
+}

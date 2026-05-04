@@ -12,10 +12,10 @@ import com.talktalk.model.document.Message;
 
 @Repository
 public interface MessagesRepository extends MongoRepository<Message, String> {
-    List<Message> findByConversationIdOrderByCreatedAtDesc(String conversationId, Pageable pageable);
+    List<Message> findByConversationIdOrderByCreatedAtDesc(Long conversationId, Pageable pageable);
 
     List<Message> findByConversationIdAndCreatedAtBeforeOrderByCreatedAtDesc(
-            String conversationId,
+            Long conversationId,
             LocalDateTime createdAt,
             Pageable pageable);
 }

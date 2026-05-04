@@ -8,7 +8,7 @@ function MessageItem({ messages, setMessages }) {
   const [previewMedia, setPreviewMedia] = useState(null);
   return (
     <>
-      {messages?.content?.map((item, index) => (
+      {messages?.map((item, index) => (
         <Box
           key={index}
           sx={{
@@ -69,11 +69,11 @@ function MessageItem({ messages, setMessages }) {
               )}
 
               {/* Files Container */}
-              {item.files && item.files.length > 0 && (
+              {item.attachments && item.attachments.length > 0 && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: item.isOwnMessage ? 'flex-end' : 'flex-start' }}>
                   {(() => {
-                    const images = item.files.filter(f => f.type.startsWith('image/'));
-                    const otherFiles = item.files.filter(f => !f.type.startsWith('image/'));
+                    const images = item.attachments.filter(f => f.type.startsWith('image/'));
+                    const otherFiles = item.attachments.filter(f => !f.type.startsWith('image/'));
 
                     return (
                       <>

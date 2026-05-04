@@ -48,6 +48,17 @@ export const getAllConversationsByUser = async (userId, keyword = '') => {
     return response.data;
 }
 
+export const getListMemberByConversationId = async (conversationId) => {
+    const response = await authorizeAxios.get(`${API_ROOT}/api/v1/conversations/members?conversationId=${conversationId}`);
+    return response.data;
+}
+
+// conversation members
+export const deleteUserInGroup = async (conversationId, userId) => {
+    const response = await authorizeAxios.delete(`${API_ROOT}/api/v1/conversations-members?conversationId=${conversationId}&userId=${userId}`);
+    return response.data;
+}
+
 //user
 export const getCurrentUser = async () => {
     const response = await authorizeAxios.get(`${API_ROOT}/api/v1/users`);
