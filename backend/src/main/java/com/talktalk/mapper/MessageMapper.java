@@ -1,11 +1,21 @@
 package com.talktalk.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.model.document.Message;
+import com.talktalk.model.entity.User;
 
-@Mapper(componentModel = "spring", uses = AttachmentMapper.class)
+@Mapper(componentModel = "spring", uses = {
+        AttachmentMapper.class,
+        UserMapper.class
+})
 public interface MessageMapper {
-    MessageResponse toMessageResponse(Message message);
+
+    @Mapping(target = "user", source = "user")
+    @Mapping(target = "createdAt", source = "message.createdAt")
+    @Mapping(target = "updatedAt", source = "message.updatedAt")
+    @Mapping(target = "deletedAt", source = "message.deletedAt")
+    MessageResponse toMessageResponse(Message message, User user);
 }

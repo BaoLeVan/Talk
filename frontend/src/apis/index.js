@@ -55,7 +55,7 @@ export const getCurrentUser = async () => {
 }
 
 //messages
-export const getMessagesByConversationId = async (conversationId, cursor = null) => {
-    const response = await authorizeAxios.get(`${API_ROOT}/api/v1/messages?conversationId=${conversationId}&cursor=${cursor}`);
+export const getMessagesByConversationId = async (query) => {
+    const response = await authorizeAxios.get(`${API_ROOT}/api/v1/messages`, { params: query });
     return response.data;
 }

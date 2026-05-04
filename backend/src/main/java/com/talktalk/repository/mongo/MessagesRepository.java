@@ -14,8 +14,6 @@ import com.talktalk.model.document.Message;
 public interface MessagesRepository extends MongoRepository<Message, String> {
     List<Message> findByConversationIdOrderByCreatedAtDesc(String conversationId, Pageable pageable);
 
-    long countByConversationId(String conversationId);
-
     List<Message> findByConversationIdAndCreatedAtBeforeOrderByCreatedAtDesc(
             String conversationId,
             LocalDateTime createdAt,

@@ -1,9 +1,8 @@
 spring:
   application:
     name: talk
-  data:
-    mongodb:
-      uri: mongodb+srv://warcraftkun:CmeYUkN0DJHeVBmH@cluster0-baole.6bydbes.mongodb.net/talk?retryWrites=true&w=majority&appName=Cluster0-BaoLe/talktalk
+  mongodb:
+    uri: mongodb+srv://levannhatbao29_db_user:LGfwtMev14cXyH4E@cluster-jv-baole.gqk85p4.mongodb.net/talk?appName=Cluster-JV-BaoLe
   datasource:
     url: jdbc:postgresql://localhost:5432/talktalk
     username: postgres
@@ -31,4 +30,3 @@ jwt:
   secret: Do8q4JpVmM0UST7pIvpGUMXdXMH0wlF0z6RHXm6d1XQ=
   validDuration: 60000m
   refreshableDuration: 7d
-

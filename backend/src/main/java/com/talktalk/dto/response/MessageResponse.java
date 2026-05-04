@@ -5,23 +5,26 @@ import java.util.List;
 
 import com.talktalk.exception.enums.MessageStatus;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class MessageResponse {
-    private String conversationId;
-    private String senderId;
-    private String content;
-    private MessageStatus status;
-    private LocalDateTime editedAt;
-    private LocalDateTime deletedAt;
-    private List<AttachmentResponse> attachments;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    Long conversationId;
+    UserResponse user;
+    String content;
+    MessageStatus status;
+    LocalDateTime editedAt;
+    LocalDateTime deletedAt;
+    List<AttachmentResponse> attachments;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
 }

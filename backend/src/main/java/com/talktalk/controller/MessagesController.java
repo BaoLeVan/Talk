@@ -29,7 +29,7 @@ public class MessagesController {
     @GetMapping
     public ApiResponse<MessagePageResponse> getMessagesByConversationId(
             @RequestParam String conversationId,
-            @RequestParam LocalDateTime cursor,
+            @RequestParam(required = false) LocalDateTime cursor,
             @RequestParam(defaultValue = "25") int size) {
         log.info("Get messages by conversation id: {}, cursor: {}, size: {}", conversationId, cursor, size);
         MessagePageResponse response = messagesService.getMessagesByConversationId(conversationId, cursor, size);
