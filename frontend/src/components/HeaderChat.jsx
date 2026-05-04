@@ -12,14 +12,13 @@ function HeaderChat({ conversation }) {
             py: 2,
             alignItems: 'center'
         }}>
-            <Avatar src={conversation?.avatar || null}>
-                
+            <Avatar src={conversation.conversationType === "GROUP" ? conversation.conversationAvatar : conversation.userAvatar}>
             </Avatar>
             <Box sx={{
                 flexGrow: 1,
                 ml: 2
             }}>
-                <Typography variant="h6" color="text.primary">{conversation?.title}</Typography>
+                <Typography variant="h6" color="text.primary">{conversation.conversationType === "GROUP" ? conversation.conversationTitle : conversation.userName}</Typography>
                 <Typography variant="body2" color="text.secondary">Online</Typography>
             </Box>
             <Box>

@@ -1,5 +1,7 @@
 package com.talktalk.dto.request;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,8 +12,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChatMessageRequest {
-    private String senderId;
-    private String roomId;
+    private Long senderId;
+    private Long conversationId;
     private String content;
     private String messageType;
+    private List<String> attachments;
 }

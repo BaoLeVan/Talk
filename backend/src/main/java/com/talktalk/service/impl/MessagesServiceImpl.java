@@ -12,12 +12,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import com.talktalk.dto.request.ChatMessageRequest;
 import com.talktalk.dto.response.MessagePageResponse;
 import com.talktalk.dto.response.MessageResponse;
+import com.talktalk.exception.AppException;
+import com.talktalk.exception.ErrorCode;
+import com.talktalk.exception.enums.MessageStatus;
 import com.talktalk.mapper.MessageMapper;
-import com.talktalk.mapper.UserMapper;
 import com.talktalk.model.document.Message;
+import com.talktalk.model.entity.Conversations;
 import com.talktalk.model.entity.User;
+import com.talktalk.repository.jpa.ConversationsMembersRepository;
+import com.talktalk.repository.jpa.ConversationsRepository;
 import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.repository.mongo.MessagesRepository;
 import com.talktalk.service.MessagesService;
@@ -33,12 +39,50 @@ public class MessagesServiceImpl implements MessagesService {
 
         MessagesRepository messagesRepository;
         MessageMapper messageMapper;
-        UserMapper userMapper;
         UserRepository userRepository;
+        ConversationsRepository conversationsRepository;
+        ConversationsMembersRepository conversationsMembersRepository;
+
+        @Override
+        public MessageResponse createMessage(ChatMessageRequest request) {
+                User user = userRepository.findById(request.getSenderId())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+                Conversations conversation = conversationsRepository
+                                .findByIdAndDeletedAtIsNull(request.getConversationId())
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+                boolean isMember = conversationsMembersRepository
+                                .existsByConversationsIdAndUserIdAndLeftAtIsNull(request.getConversationId(),
+                                                request.getSenderId());
+                if (!isMember) {
+                        throw new AppException(ErrorCode.FORBIDDEN);
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+                Message message = Message.builder()
+                                .conversationId(request.getConversationId())
+                                .senderId(request.getSenderId())
+                                .content(request.getContent())
+                                .status(MessageStatus.SENT)
+                                .attachments(Collections.emptyList())
+                                .deletedAt(null)
+                                .build();
+
+                message.setUpdatedAt(now);
+                message.setCreatedAt(now);
+                Message savedMessage = messagesRepository.save(message);
+                conversation.setLastMessage(request.getContent());
+                conversation.setLastMessageAt(now);
+
+                conversationsRepository.save(conversation);
+
+                return messageMapper.toMessageResponse(savedMessage, user);
+        }
 
         @Override
         @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-        public MessagePageResponse getMessagesByConversationId(String conversationId, LocalDateTime cursor, int size) {
+        public MessagePageResponse getMessagesByConversationId(Long conversationId, LocalDateTime cursor, int size) {
                 int validSize = size <= 0 ? 25 : Math.min(size, 50);
 
                 Pageable pageable = PageRequest.of(0, validSize);
@@ -58,7 +102,6 @@ public class MessagesServiceImpl implements MessagesService {
                                                         pageable);
                 }
 
-                // Đảo lại để UI hiển thị từ cũ → mới
                 Collections.reverse(messages);
 
                 Set<Long> userIds = messages.stream()
@@ -70,7 +113,8 @@ public class MessagesServiceImpl implements MessagesService {
 
                 // get user in messages
                 List<MessageResponse> response = messages.stream()
-                                .map(message -> messageMapper.toMessageResponse(message, userMap.get(message.getSenderId())))
+                                .map(message -> messageMapper.toMessageResponse(message,
+                                                userMap.get(message.getSenderId())))
                                 .toList();
 
                 // cursor mới = tin nhắn cũ nhất trong batch

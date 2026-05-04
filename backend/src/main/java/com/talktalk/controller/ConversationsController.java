@@ -3,6 +3,7 @@ package com.talktalk.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.talktalk.dto.response.ApiResponse;
 import com.talktalk.dto.response.ConversationResponse;
+import com.talktalk.dto.response.MembersResponse;
 import com.talktalk.service.ConversationsService;
 
 import lombok.AccessLevel;
@@ -36,6 +38,18 @@ public class ConversationsController {
                 .code(HttpStatus.OK.value())
                 .message("Get conversations successfully")
                 .data(conversations)
+                .build();
+    }
+
+    @GetMapping("/members")
+    public ApiResponse<List<MembersResponse>> getListMemberByConversationId(
+            @RequestParam Long conversationId) {
+        log.info("Get list member by conversation id: {}", conversationId);
+        List<MembersResponse> members = conversationsService.getListMemberByConversationId(conversationId);
+        return ApiResponse.<List<MembersResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Get list member successfully")
+                .data(members)
                 .build();
     }
 }

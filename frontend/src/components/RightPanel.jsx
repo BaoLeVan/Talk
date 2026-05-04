@@ -5,46 +5,30 @@ import ShieldIcon from '@mui/icons-material/Shield';
 import { styled } from '@mui/material/styles';
 import { Close, EmailOutlined } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import CallIcon from '@mui/icons-material/Call';
 import DialogConfirm from './Form/DialogConfirm';
 import { useUser } from './context/UserContext';
+import { TYPE } from '~/utils/constants';
+import { getListMemberByConversationId } from '~/apis';
 
-const TYPE = {
-    PRIVATE: 'PRIVATE',
-    GROUP: 'GROUP'
-}
 
 function RightPanel({ conversation }) {
-    const [users, setUsers] = useState([{
-        name: 'User 1',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-        status: 'online'
-    },
-    {
-        name: 'User 2',
-        avatar: 'https://i.pravatar.cc/150?img=2',
-        status: 'offline'
-    },
-    {
-        name: 'User 3',
-        avatar: 'https://i.pravatar.cc/150?img=3',
-        status: 'online'
-    },
-    {
-        name: 'User 4',
-        avatar: 'https://i.pravatar.cc/150?img=4',
-        status: 'offline'
-    }]);
     const [userDelete, setUserDelete] = useState(null);
-    const [openDialog, setOpenDialog] = React.useState(false);
+    const [openDialog, setOpenDialog] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
+    const [listMember, setListMember] = useState([]);
     const { user } = useUser();
 
     useEffect(() => {
-        if (conversation.type === TYPE.GROUP) {
-
+        if (conversation?.conversationType === TYPE.GROUP) {
+            const getListMember = async () => {
+                const result = await getListMemberByConversationId(conversation?.conversationId);
+                if (result) {
+                    setListMember(result.data);
+                }
+            }
+            getListMember();
         }
-    }, [conversation, users])
+    }, [])
 
     const handleListItemClick = (event, index) => {
         setSelectedIndex(index);
@@ -134,7 +118,7 @@ function RightPanel({ conversation }) {
                         fontSize: '1.25rem'
                     }}>Contact Info</Typography>
                 </Box>
-                {conversation.type === TYPE.GROUP ?
+                {conversation.conversationType === TYPE.GROUP ?
                     <Box sx={{
                         px: '20px',
                         py: '32px',
@@ -145,18 +129,18 @@ function RightPanel({ conversation }) {
                         flexShrink: 0,
                         overflow: 'hidden'
                     }}>
-                        <Avatar 
-                        src={conversation?.avatar}
-                        sx={{
-                            width: '96px',
-                            height: '96px',
-                            marginBottom: 2
-                        }}/>
+                        <Avatar
+                            src={conversation?.avatar}
+                            sx={{
+                                width: '96px',
+                                height: '96px',
+                                marginBottom: 2
+                            }} />
                         <Typography sx={{
                             fontSize: '1.2rem',
                             fontWeight: '600',
                             marginBottom: 0.5
-                        }}>{conversation?.title}</Typography>
+                        }}>{conversation?.conversationTitle}</Typography>
                     </Box>
                     : <Box sx={{
                         px: '20px',
@@ -168,21 +152,22 @@ function RightPanel({ conversation }) {
                         flexShrink: 0,
                         overflow: 'hidden'
                     }}>
-                        <Avatar 
-                        src={user?.avatar}
-                        sx={{
-                            width: '96px',
-                            height: '96px',
-                            marginBottom: 2
-                        }}/>
+                        <Avatar
+                            src={conversation?.userAvatar}
+                            sx={{
+                                width: '96px',
+                                height: '96px',
+                                marginBottom: 2
+                            }} />
                         <Typography sx={{
                             fontSize: '1.2rem',
                             fontWeight: '600',
                             marginBottom: 0.5
-                        }}>{user?.userName}</Typography>
-                    </Box>}
+                        }}>{conversation?.userName}</Typography>
+                    </Box>
+                }
                 <Box sx={{ borderBottom: '1px solid #e0e0e0', flexGrow: 1, overflow: 'hidden' }}>
-                    {conversation.type === TYPE.GROUP ?
+                    {conversation.conversationType === TYPE.GROUP ?
                         <List
                             sx={{
                                 width: '100%',
@@ -192,17 +177,17 @@ function RightPanel({ conversation }) {
                                 overflow: 'auto',
                             }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
-                                <Typography sx={{ fontWeight: 'bold' }}>{users.length} Members</Typography>
+                                <Typography sx={{ fontWeight: 'bold' }}>{listMember.length} Members</Typography>
                                 <IconButton size='large'>
                                     <AddCircleIcon fontSize='small' />
                                 </IconButton>
                             </Box>
-                            {users.map((user, index) => (
+                            {listMember.map((member) => (
                                 <ListItemButton
-                                    key={index}
+                                    key={member.userId}
                                     sx={{ p: 0 }}
-                                    selected={selectedIndex === index}
-                                    onClick={(event) => handleListItemClick(event, index)}
+                                    selected={selectedIndex === member.userId}
+                                    onClick={(event) => handleListItemClick(event, member.userId)}
                                 >
                                     <ListItem alignItems="flex-start">
                                         <ListItemAvatar>
@@ -213,11 +198,11 @@ function RightPanel({ conversation }) {
                                                 }}
                                                 variant="dot"
                                                 color="success">
-                                                <Avatar alt="Remy Sharp" src={user.avatar} />
+                                                <Avatar alt="Remy Sharp" src={member.userAvatar} />
                                             </Badge>
                                         </ListItemAvatar>
                                         <ListItemText
-                                            primary={user.name}
+                                            primary={member.userName}
                                             secondary={
                                                 <React.Fragment>
                                                     <Typography
@@ -225,16 +210,18 @@ function RightPanel({ conversation }) {
                                                         variant="body2"
                                                         sx={{ color: 'text.primary', display: 'inline' }}
                                                     >
-                                                        {user.status}
+                                                        {member?.isOnline}
                                                     </Typography>
                                                 </React.Fragment>
                                             }
                                         />
-                                        <Box sx={{ height: '100%', }}>
-                                            <IconButton onClick={e => handleDelete(user)} size='large' color='error'>
-                                                <Close fontSize="small" />
-                                            </IconButton>
-                                        </Box>
+                                        {user?.id !== member?.userId && member?.userRole !== 'ADMIN' && (
+                                            <Box sx={{ height: '100%', }}>
+                                                <IconButton onClick={e => handleDelete(member)} size='large' color='error'>
+                                                    <Close fontSize="small" />
+                                                </IconButton>
+                                            </Box>
+                                        )}
                                     </ListItem>
                                 </ListItemButton>
                             ))}
@@ -261,22 +248,6 @@ function RightPanel({ conversation }) {
                                 }}>
                                     <Typography fontSize={13} color="text.secondary">Email</Typography>
                                     <Typography fontSize={14} variant="body2" color="text.primary">{user.email}</Typography>
-                                </Box>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Box sx={{
-                                    backgroundColor: 'rgb(240, 242, 245)',
-                                    p: 1,
-                                    borderRadius: '50%'
-                                }}>
-                                    <CallIcon sx={{ color: 'text.secondary' }} />
-                                </Box>
-                                <Box sx={{
-                                    flexGrow: 1,
-                                    ml: 2
-                                }}>
-                                    <Typography fontSize={13} color="text.secondary">Phone</Typography>
-                                    <Typography fontSize={14} variant="body2" color="text.primary">{user.phone}</Typography>
                                 </Box>
                             </Box>
                         </Box>
@@ -331,8 +302,7 @@ function RightPanel({ conversation }) {
                 openDialog={openDialog}
                 setOpenDialog={setOpenDialog}
                 userDelete={userDelete}
-                users={users}
-                setUsers={setUsers}
+                conversationId={conversation?.conversationId}
             />
         </>
     )

@@ -12,12 +12,12 @@ import { acceptFilesValidator } from '~/utils/common';
 import { toast } from 'react-toastify';
 import { useUser } from './context/UserContext';
 
-function MessageInput({ setMessages }) {
+function MessageInput({ conversation, sendMessage }) {
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
-  const {user} = useUser();
+  const { user } = useUser();
 
   const onDrop = useCallback((acceptedFiles) => {
 
@@ -70,23 +70,21 @@ function MessageInput({ setMessages }) {
     inputRef.current.focus();
   }
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm()
+  const { handleSubmit } = useForm()
 
   const handleSend = () => {
-    setMessages({
+    if (!conversation || !user || (!message && files.length === 0)) {
+      return;
+    }
+
+    sendMessage('/app/chat.sendMessage', {
+      senderId: user.id,
+      conversationId: conversation.conversationId,
       content: message,
-      files: files,
-      time: new Date().toLocaleTimeString(),
-      isOwnMessage: user?.id,
-      senderName: user?.userName,
-      avatar: user?.avatar,
-      status: 'SENT',
+      messageType: 'CHAT',
+      attachments: (files || []).map((file) => file.url)
     })
+
     setFiles([])
     setMessage('')
   }

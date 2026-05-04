@@ -1,37 +1,44 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
 import { getMessagesByConversationId } from '~/apis'
 import { useUser } from './context/UserContext'
+import { useStomp } from '~/hooks/useStomp'
 import moment from 'moment'
 
 function ChatWindow({ conversation }) {
   const { user } = useUser();
-  const [messages, setMessages] = useState({
-    content: '' || [],
-    time: '',
-    isOwnMessage: false,
-    senderName: '',
-    avatar: '',
-    status: '',
-    attachments: []
-  })
+  const [messages, setMessages] = useState([])
 
-  const [query, setQuery] = useState({
-    cursor: null,
-    conversationId: null
-  })
+  const handleMessageReceived = useCallback((message) => {
+    setMessages((prevMessages) => [...prevMessages, {
+      content: message?.content,
+      time: moment(message?.updatedAt || message?.createdAt || message?.timestamp).format('dddd h:mm A'),
+      isOwnMessage: message?.user?.id === user?.id,
+      senderName: message?.user?.userName,
+      avatar: message?.user?.avatar,
+      status: message?.status,
+      attachments: message?.attachments || []
+    }])
+  }, [user?.id])
+
+  const { connected, subscribeRoom, sendMessage } = useStomp();
+
+  useEffect(() => {
+    if (conversation && connected) {
+      subscribeRoom(conversation?.conversationId, handleMessageReceived);
+    }
+  }, [conversation?.conversationId, connected, subscribeRoom, handleMessageReceived]);
 
   useEffect(() => {
     if (conversation) {
-      query.conversationId = conversation.id;
-      if (query.cursor) {
-        query.cursor = query.cursor;
-      }
       const getMessages = async () => {
-        const result = await getMessagesByConversationId(query);
+        const result = await getMessagesByConversationId({
+          cursor: null,
+          conversationId: conversation.conversationId
+        });
         if (result) {
           const messages = result.data.messages;
           const messageContent = messages.map((message) => ({
@@ -41,16 +48,14 @@ function ChatWindow({ conversation }) {
             senderName: message?.user?.userName,
             avatar: message?.user?.avatar,
             status: message?.status,
-            attachments: message.attachments || []
+            attachments: message?.attachments || []
           }));
-          setMessages({
-            content: messageContent,
-          });
+          setMessages(messageContent);
         }
       }
       getMessages();
     }
-  }, [conversation]);
+  }, [conversation, user?.id]);
 
   if (!conversation) {
     return (
@@ -117,7 +122,7 @@ function ChatWindow({ conversation }) {
         <MessageItem messages={messages} setMessages={setMessages} />
       </Box>
       <Box sx={{ width: '100%', bgcolor: 'white' }}>
-        <MessageInput setMessages={setMessages} />
+        <MessageInput conversation={conversation} sendMessage={sendMessage} />
       </Box>
     </Box>
   )

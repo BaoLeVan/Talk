@@ -1,11 +1,12 @@
 package com.talktalk.dto.response;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -13,9 +14,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChatMessageResponse {
     private String id;
-    private String senderId;
-    private String roomId;
+    private Long senderId;
+    private Long conversationId;
     private String content;
     private String messageType; // e.g., CHAT, JOIN, LEAVE
+    private List<String> attachments;
     private LocalDateTime timestamp;
 }

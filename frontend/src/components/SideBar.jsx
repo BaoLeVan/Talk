@@ -8,6 +8,7 @@ import { getAllConversationsByUser, logout, setAccessToken } from '~/apis';
 import { toast } from 'react-toastify';
 import { useUser } from '~/components/context/UserContext';
 import useDebounce from './customHook/useDebounce';
+import { TYPE } from '~/utils/constants';
 
 function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
 
   const handleListItemClick = (event, index) => {
     onSelectConversation(index);
-    const result = conversations.find((data) => data.id === index);
+    const result = conversations.find((data) => data.conversationId === index);
     setConversation(result);
   };
 
@@ -117,16 +118,16 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
           ) : conversations?.map((conversation) => (
             <ListItemButton
               sx={{ p: 0 }}
-              selected={selectedIndex === conversation.id}
-              onClick={(event) => handleListItemClick(event, conversation.id)}
-              key={conversation.id}
+              selected={selectedIndex === conversation.conversationId}
+              onClick={(event) => handleListItemClick(event, conversation.conversationId)}
+              key={conversation.conversationId}
             >
               <ListItem sx={{ width: '100%' }}>
 
                 {/* 1 */}
                 <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                   <ListItemAvatar>
-                    <Avatar alt="Remy Sharp" src={conversation.avatar} />
+                    <Avatar alt="Remy Sharp" src={conversation.conversationType === TYPE.GROUP ? conversation.conversationAvatar : conversation.userAvatar} />
                   </ListItemAvatar>
                 </Box>
 
@@ -139,11 +140,11 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                         fontSize: '1rem',
                         lineHeight: '1.5',
                         color: 'text.secondary'
-                      }} >{conversation.title}</Typography> : conversation.title
+                      }} >{conversation.conversationType === TYPE.GROUP ? conversation.conversationTitle : conversation.userName}</Typography> : conversation.conversationType === TYPE.GROUP ? conversation.conversationTitle : conversation.userName
                     }
                     secondary={
                       conversation.userID === user?.id
-                        ? `You: ${conversation.lastMessage} • ${conversation.lastMessageAt}`
+                        ? `You: ${conversation.conversationLastMessage} • ${formatTimeChat(conversation.conversationLastMessageAt)}`
                         : (
                           conversation.unreadCount > 0 ?
                             <span style={{ display: 'flex' }} >
@@ -156,10 +157,11 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                                   maxWidth: '80%',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap',
+                                  pr:1
                                 }}
                               >
-                                {conversation.lastMessage}
+                                {conversation.conversationLastMessage}
                               </Typography>
                               <Typography
                                 component="span"
@@ -167,7 +169,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                                 sx={{
                                   color: 'text.secondary'
                                 }}>
-                                {' • ' + formatTimeChat(conversation.lastMessageAt)}
+                                {' • ' + formatTimeChat(conversation.conversationLastMessageAt)}
                               </Typography>
                             </span>
                             :
@@ -181,10 +183,11 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                                   maxWidth: '80%',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap',
+                                  pr:1
                                 }}
                               >
-                                {conversation.lastMessage}
+                                {conversation.conversationLastMessage}
                               </Typography>
                               <Typography
                                 component="span"
@@ -192,7 +195,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                                 sx={{
                                   color: 'text.primary'
                                 }}>
-                                {' • ' + formatTimeChat(conversation.lastMessageAt)}
+                                {' • ' + formatTimeChat(conversation.conversationLastMessageAt)}
                               </Typography>
                             </span>
                         )
@@ -214,7 +217,6 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                     }}
                   />
                 </Box>
-
               </ListItem>
             </ListItemButton>
           ))}

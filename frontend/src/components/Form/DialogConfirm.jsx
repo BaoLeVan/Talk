@@ -5,16 +5,24 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import { toast } from 'react-toastify';
+import { deleteUserInGroup } from '~/apis';
 
-function DialogConfirm({ openDialog, setOpenDialog, users, setUsers, userDelete }) {
+function DialogConfirm({ openDialog, setOpenDialog, userDelete, conversationId }) {
 
     const handleClose = () => {
         setOpenDialog(false);
     };
 
     const handleDelete = () => {
-        setOpenDialog(false);
-        setUsers(users.filter((u) => u?.name !== userDelete?.name))
+        const deleteUser = async () => {
+            const result = await deleteUserInGroup(conversationId, userDelete?.userId);
+            if (result) {
+                toast.success(result.message);
+            }
+            setOpenDialog(false);
+        }
+        deleteUser();
     }
 
     return (
@@ -27,11 +35,11 @@ function DialogConfirm({ openDialog, setOpenDialog, users, setUsers, userDelete 
                 role="alertdialog"
             >
                 <DialogTitle id="alert-dialog-title">
-                    {userDelete?.name + ` do you want to delete this user?`}
+                    {userDelete?.userName + ` do you want to delete this user from this group?`}
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        This action will permanently delete the user and all associated data.
+                        This action will permanently delete the user from this group.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
