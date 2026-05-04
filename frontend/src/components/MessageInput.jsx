@@ -10,12 +10,15 @@ import { useForm } from 'react-hook-form';
 import { useDropzone } from 'react-dropzone';
 import { acceptFilesValidator } from '~/utils/common';
 import { toast } from 'react-toastify';
+import { useUser } from './context/UserContext';
 
 function MessageInput({ setMessages }) {
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
+  const {user} = useUser();
+
   const onDrop = useCallback((acceptedFiles) => {
 
     for (const acceptedFile of acceptedFiles) {
@@ -79,11 +82,10 @@ function MessageInput({ setMessages }) {
       content: message,
       files: files,
       time: new Date().toLocaleTimeString(),
-      isOwnMessage: true,
-      senderName: 'Bao',
-      avatar: 'https://mui.com/static/images/avatar/3.jpg',
-      showAvatar: false,
-      status: 'read',
+      isOwnMessage: user?.id,
+      senderName: user?.userName,
+      avatar: user?.avatar,
+      status: 'SENT',
     })
     setFiles([])
     setMessage('')

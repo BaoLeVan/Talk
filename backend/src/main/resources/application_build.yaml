@@ -3,7 +3,7 @@ spring:
     name: talk
   data:
     mongodb:
-      uri: mongodb+srv://${MONGO_ROOT_USERNAME:warcraftkun}:${MONGO_ROOT_PASSWORD:CmeYUkN0DJHeVBmH}@cluster0-baole.6bydbes.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0-BaoLe
+      uri: mongodb+srv://${MONGO_ROOT_USERNAME:levannhatbao29_db_user}:${MONGO_ROOT_PASSWORD:LGfwtMev14cXyH4E}@cluster-jv-baole.gqk85p4.mongodb.net/talk?appName=Cluster-JV-BaoLe
   datasource:
     url: jdbc:postgresql://postgres:5432/${POSTGRES_DB:talktalk}
     username: ${POSTGRES_USER:postgres}

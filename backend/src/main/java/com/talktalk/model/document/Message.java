@@ -24,8 +24,8 @@ import com.talktalk.model.entity.BaseEntity;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Message extends BaseEntity {
-    String conversationId;
-    String senderId;
+    Long conversationId;
+    Long senderId;
     String content;
     MessageStatus status;
     LocalDateTime deletedAt;

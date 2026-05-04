@@ -7,6 +7,7 @@ import { Close, EmailOutlined } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CallIcon from '@mui/icons-material/Call';
 import DialogConfirm from './Form/DialogConfirm';
+import { useUser } from './context/UserContext';
 
 const TYPE = {
     PRIVATE: 'PRIVATE',
@@ -37,10 +38,7 @@ function RightPanel({ conversation }) {
     const [userDelete, setUserDelete] = useState(null);
     const [openDialog, setOpenDialog] = React.useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
-    const user = {
-        email: 'levannhatbao29@gmail.com',
-        phone: '0768568962'
-    }
+    const { user } = useUser();
 
     useEffect(() => {
         if (conversation.type === TYPE.GROUP) {
@@ -136,31 +134,53 @@ function RightPanel({ conversation }) {
                         fontSize: '1.25rem'
                     }}>Contact Info</Typography>
                 </Box>
-                <Box sx={{
-                    px: '20px',
-                    py: '32px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    borderBottom: '1px solid #e0e0e0',
-                    flexShrink: 0,
-                    overflow: 'hidden'
-                }}>
-                    <Avatar sx={{
-                        width: '96px',
-                        height: '96px',
-                        marginBottom: 2
-                    }}></Avatar>
-                    <Typography sx={{
-                        fontSize: '1.2rem',
-                        fontWeight: '600',
-                        marginBottom: 0.5
-                    }}>Contact Info</Typography>
-                    <Typography sx={{
-                        fontSize: '0.8rem',
-                        color: 'text.secondary'
-                    }}>Active now</Typography>
-                </Box>
+                {conversation.type === TYPE.GROUP ?
+                    <Box sx={{
+                        px: '20px',
+                        py: '32px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        borderBottom: '1px solid #e0e0e0',
+                        flexShrink: 0,
+                        overflow: 'hidden'
+                    }}>
+                        <Avatar 
+                        src={conversation?.avatar}
+                        sx={{
+                            width: '96px',
+                            height: '96px',
+                            marginBottom: 2
+                        }}/>
+                        <Typography sx={{
+                            fontSize: '1.2rem',
+                            fontWeight: '600',
+                            marginBottom: 0.5
+                        }}>{conversation?.title}</Typography>
+                    </Box>
+                    : <Box sx={{
+                        px: '20px',
+                        py: '32px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        borderBottom: '1px solid #e0e0e0',
+                        flexShrink: 0,
+                        overflow: 'hidden'
+                    }}>
+                        <Avatar 
+                        src={user?.avatar}
+                        sx={{
+                            width: '96px',
+                            height: '96px',
+                            marginBottom: 2
+                        }}/>
+                        <Typography sx={{
+                            fontSize: '1.2rem',
+                            fontWeight: '600',
+                            marginBottom: 0.5
+                        }}>{user?.userName}</Typography>
+                    </Box>}
                 <Box sx={{ borderBottom: '1px solid #e0e0e0', flexGrow: 1, overflow: 'hidden' }}>
                     {conversation.type === TYPE.GROUP ?
                         <List
@@ -186,7 +206,6 @@ function RightPanel({ conversation }) {
                                 >
                                     <ListItem alignItems="flex-start">
                                         <ListItemAvatar>
-
                                             <Badge
                                                 anchorOrigin={{
                                                     vertical: 'bottom',

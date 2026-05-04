@@ -3,27 +3,49 @@ import { Box, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
-import { TYPE_MESSAGE } from '~/utils/common'
 import { getMessagesByConversationId } from '~/apis'
+import { useUser } from './context/UserContext'
+import moment from 'moment'
 
 function ChatWindow({ conversation }) {
+  const { user } = useUser();
   const [messages, setMessages] = useState({
     content: '' || [],
     time: '',
     isOwnMessage: false,
     senderName: '',
     avatar: '',
-    showAvatar: false,
     status: '',
-    type: TYPE_MESSAGE.TEXT || TYPE_MESSAGE.IMAGE || TYPE_MESSAGE.VIDEO || TYPE_MESSAGE.FILE
+    attachments: []
+  })
+
+  const [query, setQuery] = useState({
+    cursor: null,
+    conversationId: null
   })
 
   useEffect(() => {
     if (conversation) {
+      query.conversationId = conversation.id;
+      if (query.cursor) {
+        query.cursor = query.cursor;
+      }
       const getMessages = async () => {
-        const result = await getMessagesByConversationId(conversation.id);
+        const result = await getMessagesByConversationId(query);
         if (result) {
-          setMessages(result.data);
+          const messages = result.data.messages;
+          const messageContent = messages.map((message) => ({
+            content: message?.content,
+            time: moment(message?.updatedAt).format('dddd h:mm A'),
+            isOwnMessage: message?.user?.id === user?.id,
+            senderName: message?.user?.userName,
+            avatar: message?.user?.avatar,
+            status: message?.status,
+            attachments: message.attachments || []
+          }));
+          setMessages({
+            content: messageContent,
+          });
         }
       }
       getMessages();
