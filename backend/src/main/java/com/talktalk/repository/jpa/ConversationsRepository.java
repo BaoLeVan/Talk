@@ -16,9 +16,9 @@ import com.talktalk.model.entity.Conversations;
 public interface ConversationsRepository extends JpaRepository<Conversations, Long> {
 
     @Query("SELECT new com.talktalk.dto.response.ConversationResponse(c.id, c.avatar, c.title, c.type, c.lastMessage, c.lastMessageAt, cm2.user.id, u.userName, u.avatar) " +
-            "FROM Conversations_members cm " +
+            "FROM ConversationsMembers cm " +
             "JOIN cm.conversations c " +
-            "JOIN Conversations_members cm2 ON cm2.conversations.id = c.id " +
+            "JOIN ConversationsMembers cm2 ON cm2.conversations.id = c.id " +
             "JOIN cm2.user u " +
             "WHERE cm.user.id = :userId " +
             "AND (c.title LIKE CONCAT('%', :title, '%') OR (c.type = 0 AND u.userName LIKE CONCAT('%', :title, '%') AND u.id <> :userId)) " +
@@ -27,7 +27,7 @@ public interface ConversationsRepository extends JpaRepository<Conversations, Lo
     List<ConversationResponse> getAllConversation(@Param("userId") Long userId, @Param("title") String title);
 
     @Query("SELECT new com.talktalk.dto.response.MembersResponse(u.id, u.avatar, u.userName, cm.role) " +
-            "FROM Conversations_members cm " +
+            "FROM ConversationsMembers cm " +
             "JOIN cm.conversations c " +
             "JOIN cm.user u " +
             "WHERE cm.conversations.id = :conversationId " +

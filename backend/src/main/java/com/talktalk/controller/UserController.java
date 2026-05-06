@@ -1,10 +1,13 @@
 package com.talktalk.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.talktalk.dto.response.ApiResponse;
@@ -35,6 +38,19 @@ public class UserController {
                 .code(HttpStatus.OK.value())
                 .message("Get user successfully")
                 .data(user)
+                .build();
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<List<UserResponse>> searchUsers(@RequestParam String keyword) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        UserResponse currentUser = userService.findByEmail(email);
+        List<UserResponse> users = userService.searchUsers(keyword, currentUser.getId());
+        return ApiResponse.<List<UserResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Search users successfully")
+                .data(users)
                 .build();
     }
 }

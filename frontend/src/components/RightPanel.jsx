@@ -6,37 +6,71 @@ import { styled } from '@mui/material/styles';
 import { Close, EmailOutlined } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DialogConfirm from './Form/DialogConfirm';
+import DialogAddMembers from './Form/DialogAddMembers';
 import { useUser } from './context/UserContext';
 import { TYPE } from '~/utils/constants';
 import { getListMemberByConversationId } from '~/apis';
+import { useChatStore } from './store/useChatStore';
+import { useStomp } from '~/hooks/useStomp';
 
 
 function RightPanel({ conversation }) {
     const [userDelete, setUserDelete] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
+    const [openAddDialog, setOpenAddDialog] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
-    const [listMember, setListMember] = useState([]);
+
     const { user } = useUser();
+    const { members, setMembers } = useChatStore();
+    const { connected, subscribeRoom, sendMessage } = useStomp();
 
     useEffect(() => {
         if (conversation?.conversationType === TYPE.GROUP) {
             const getListMember = async () => {
                 const result = await getListMemberByConversationId(conversation?.conversationId);
                 if (result) {
-                    setListMember(result.data);
+                    setMembers(result.data);
                 }
             }
             getListMember();
         }
-    }, [])
+    }, [conversation?.conversationId, conversation?.conversationType, setMembers])
 
     const handleListItemClick = (event, index) => {
         setSelectedIndex(index);
-    };
+    }
 
     const handleDelete = (userDelete) => {
         setOpenDialog(true)
         setUserDelete(userDelete)
+    }
+
+    const deleteMember = (userDeleteId, userDeleteName, conversationId) => {
+        sendMessage(`/app/chat.deleteUser`, {
+            conversationId: conversationId,
+            userId: user?.id,
+            userTargetIds: [userDeleteId],
+            userTargetNames: [userDeleteName]
+        })
+    }
+
+    const leaveGroup = (conversationId) => {
+        sendMessage(`/app/chat.leaveGroup`, {
+            conversationId: conversationId,
+            userId: user?.id
+        })
+    }
+
+    const handleAddMembers = (selectedUsers) => {
+        const userTargetIds = selectedUsers.map(u => u.id);
+        const userTargetNames = selectedUsers.map(u => u.userName);
+
+        sendMessage(`/app/chat.addUser`, {
+            conversationId: conversation?.conversationId,
+            userId: user?.id,
+            userTargetIds: userTargetIds,
+            userTargetNames: userTargetNames
+        });
     }
 
     const SwitchCustom = styled((props) => (
@@ -177,12 +211,12 @@ function RightPanel({ conversation }) {
                                 overflow: 'auto',
                             }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
-                                <Typography sx={{ fontWeight: 'bold' }}>{listMember.length} Members</Typography>
-                                <IconButton size='large'>
+                                <Typography sx={{ fontWeight: 'bold' }}>{members.length} Members</Typography>
+                                <IconButton size='large' onClick={() => setOpenAddDialog(true)}>
                                     <AddCircleIcon fontSize='small' />
                                 </IconButton>
                             </Box>
-                            {listMember.map((member) => (
+                            {members.map((member) => (
                                 <ListItemButton
                                     key={member.userId}
                                     sx={{ p: 0 }}
@@ -270,7 +304,7 @@ function RightPanel({ conversation }) {
                         <SwitchCustom />
                     </Box>
                 </Box>
-                {conversation.type === TYPE.GROUP ? (
+                {conversation.conversationType === TYPE.GROUP ? (
                     <Box sx={{ display: 'flex', px: 1, py: 2, flexShrink: 0 }}>
                         <Button sx={{
                             width: '50%',
@@ -278,7 +312,7 @@ function RightPanel({ conversation }) {
                             mx: 1,
                             backgroundColor: 'oklch(97.1% 0.013 17.38)',
                             fontWeight: 'bold'
-                        }} color='error'>Leave Group</Button>
+                        }} color='error' onClick={() => leaveGroup(conversation?.conversationId)}>Leave Group</Button>
                         <Button sx={{
                             width: '50%',
                             py: 1,
@@ -301,8 +335,15 @@ function RightPanel({ conversation }) {
             <DialogConfirm
                 openDialog={openDialog}
                 setOpenDialog={setOpenDialog}
-                userDelete={userDelete}
-                conversationId={conversation?.conversationId}
+                title={`Delete User ${userDelete?.userName}`}
+                description={`Are you sure you want to delete ${userDelete?.userName}?`}
+                handleFunction={() => deleteUser(userDelete?.userId, userDelete?.userName, conversation?.conversationId)}
+            />
+            <DialogAddMembers
+                openDialog={openAddDialog}
+                setOpenDialog={setOpenAddDialog}
+                members={members}
+                onAdd={handleAddMembers}
             />
         </>
     )

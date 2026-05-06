@@ -47,5 +47,5 @@ public class Conversations extends BaseEntity {
     LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "conversations")
-    List<Conversations_members> conversationsMembers;
+    List<ConversationsMembers> conversationsMembers;
 }

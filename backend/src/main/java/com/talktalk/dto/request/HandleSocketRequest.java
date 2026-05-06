@@ -1,5 +1,7 @@
 package com.talktalk.dto.request;
 
+import java.util.List;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +17,6 @@ import lombok.experimental.FieldDefaults;
 public class HandleSocketRequest {
     Long conversationId;
     Long userId;
-    Long userDeleteId;
-    String userDeleteName;
+    List<Long> userTargetIds;
+    List<String> userTargetNames;
 }
