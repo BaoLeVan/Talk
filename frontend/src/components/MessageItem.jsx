@@ -1,36 +1,43 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Box, Typography, Avatar, Dialog, IconButton, Tooltip } from '@mui/material'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CloseIcon from '@mui/icons-material/Close';
+import { useChatStore } from './store/useChatStore';
 
-function MessageItem({ messages, setMessages }) {
+function MessageItem() {
+  const { messages } = useChatStore();
+
   const [previewMedia, setPreviewMedia] = useState(null);
   return (
     <>
-      {messages?.map((item, index) => (
+      {messages?.map((item, index) => {
+        const isSystemMessage = item.messageType === 'SYSTEM';
+
+        return (
         <Box
           key={index}
           sx={{
             display: 'flex',
-            flexDirection: item.isOwnMessage ? 'row-reverse' : 'row',
-            alignItems: 'flex-start',
+            flexDirection: isSystemMessage ? 'row' : item.isOwnMessage ? 'row-reverse' : 'row',
+            alignItems: isSystemMessage ? 'center' : 'flex-start',
+            justifyContent: isSystemMessage ? 'center' : 'flex-start',
             mb: 2,
             px: 2,
             gap: 1.5,
           }}
         >
           {/* Avatar space for received messages */}
-          {!item.isOwnMessage && (
+          {!item.isOwnMessage && !isSystemMessage && (
             <Box sx={{ width: 40, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {/* {item.showAvatar && ( */}
-                <Avatar src={item.avatar} alt={item.senderName || 'Avatar'} sx={{ width: 40, height: 40 }} />
+              <Avatar src={item.avatar} alt={item.senderName || 'Avatar'} sx={{ width: 40, height: 40 }} />
               {/* )} */}
             </Box>
           )}
 
           {/* Message content container */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: item.isOwnMessage ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: isSystemMessage ? 'center' : item.isOwnMessage ? 'flex-end' : 'flex-start', maxWidth: isSystemMessage ? '100%' : '75%' }}>
 
             {/* Sender Name */}
             {/* {!item.isOwnMessage && item.showAvatar && item.senderName && (
@@ -38,30 +45,31 @@ function MessageItem({ messages, setMessages }) {
                 {item.senderName}
               </Typography>
             )} */}
-            {!item.isOwnMessage && item.senderName && (
+            {!item.isOwnMessage && !isSystemMessage && item.senderName && (
               <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, ml: 1, fontSize: '0.75rem' }}>
                 {item.senderName}
               </Typography>
             )}
 
             {/* Messages Container (Text + Files Stacked) */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: item.isOwnMessage ? 'flex-end' : 'flex-start' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: isSystemMessage ? 'center' : item.isOwnMessage ? 'flex-end' : 'flex-start' }}>
               {/* Text Bubble */}
               {item.content && (
                 <Box
                   sx={{
-                    py: 1,
-                    px: 2,
-                    bgcolor: item.isOwnMessage ? '#1472ff' : '#f0f2f5', // Blue for own, light grey for received
-                    color: item.isOwnMessage ? 'white' : 'text.primary',
-                    borderRadius: '20px',
+                    py: isSystemMessage ? 0.5 : 1,
+                    px: isSystemMessage ? 1.5 : 2,
+                    bgcolor: isSystemMessage ? 'transparent' : item.isOwnMessage ? '#1472ff' : '#f0f2f5',
+                    color: isSystemMessage ? 'text.secondary' : item.isOwnMessage ? 'white' : 'text.primary',
+                    borderRadius: isSystemMessage ? '8px' : '20px',
                     wordWrap: 'break-word',
                     boxShadow: 'none',
                     maxWidth: '100%',
+                    fontStyle: isSystemMessage ? 'italic' : 'normal',
                   }}
                 >
                   <Tooltip title={item.time} placement="left" arrow>
-                    <Typography variant="body1" sx={{ fontSize: '0.9375rem', lineHeight: 1.4 }}>
+                    <Typography variant="body1" sx={{ fontSize: isSystemMessage ? '0.8125rem' : '0.9375rem', lineHeight: 1.4 }}>
                       {item.content}
                     </Typography>
                   </Tooltip>
@@ -79,15 +87,15 @@ function MessageItem({ messages, setMessages }) {
                       <>
                         {/* Grouped Images */}
                         {images.length > 0 && (
-                          <Box sx={{ 
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            gap: 0.5, 
+                          <Box sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 0.5,
                             justifyContent: item.isOwnMessage ? 'flex-end' : 'flex-start',
                             maxWidth: 242 // 120 + 120 + 2 gap
                           }}>
                             {images.map((file, i) => (
-                              <Box key={`img-${i}`} 
+                              <Box key={`img-${i}`}
                                 onClick={() => setPreviewMedia({ url: file.url, type: file.type })}
                                 sx={{
                                   position: 'relative',
@@ -117,7 +125,7 @@ function MessageItem({ messages, setMessages }) {
 
                           if (isVideo) {
                             return (
-                              <Box key={`media-${i}`} 
+                              <Box key={`media-${i}`}
                                 onClick={() => setPreviewMedia({ url: file.url, type: file.type })}
                                 sx={{
                                   position: 'relative',
@@ -134,12 +142,12 @@ function MessageItem({ messages, setMessages }) {
                                 }}>
                                 <video src={file.url} style={{ width: '240px', height: 'auto', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
                                 <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.3)' }}>
-                                  <Box sx={{ 
-                                    width: 48, 
-                                    height: 48, 
-                                    borderRadius: '50%', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                                  <Box sx={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     bgcolor: 'rgba(255,255,255,0.2)',
                                     backdropFilter: 'blur(4px)'
@@ -151,7 +159,7 @@ function MessageItem({ messages, setMessages }) {
                             );
                           } else {
                             return (
-                              <Box key={`file-${i}`} 
+                              <Box key={`file-${i}`}
                                 component="a"
                                 href={file.url}
                                 download={file.name || 'download'}
@@ -171,9 +179,9 @@ function MessageItem({ messages, setMessages }) {
                                     opacity: 0.9
                                   }
                                 }}>
-                                <Box sx={{ 
-                                  p: 1, 
-                                  borderRadius: '8px', 
+                                <Box sx={{
+                                  p: 1,
+                                  borderRadius: '8px',
                                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -182,11 +190,11 @@ function MessageItem({ messages, setMessages }) {
                                   <InsertDriveFileIcon sx={{ color: '#ffffff' }} />
                                 </Box>
                                 <Box sx={{ overflow: 'hidden' }}>
-                                  <Typography variant="body2" sx={{ 
+                                  <Typography variant="body2" sx={{
                                     fontWeight: 500,
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
-                                    textOverflow: 'ellipsis' 
+                                    textOverflow: 'ellipsis'
                                   }}>
                                     {file.name}
                                   </Typography>
@@ -212,12 +220,13 @@ function MessageItem({ messages, setMessages }) {
             </Box>
           </Box>
         </Box>
-      ))
-      }
+        );
+      })}
+
 
       {/* Media Preview Modal */}
-      <Dialog 
-        open={!!previewMedia} 
+      <Dialog
+        open={!!previewMedia}
         onClose={() => setPreviewMedia(null)}
         maxWidth="xl"
         PaperProps={{
@@ -234,7 +243,7 @@ function MessageItem({ messages, setMessages }) {
         }}
       >
         <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <IconButton 
+          <IconButton
             onClick={() => setPreviewMedia(null)}
             sx={{ position: 'absolute', top: 16, right: 16, color: 'white', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
           >

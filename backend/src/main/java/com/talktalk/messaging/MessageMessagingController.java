@@ -41,33 +41,35 @@ public class MessageMessagingController {
     }
 
     @MessageMapping("/chat.addUser")
-    public void addUser(@Payload ChatMessageRequest request) {
-        log.info("User joined: {}", request.getSenderId());
-        
-        ChatMessageResponse response = ChatMessageResponse.builder()
-                .senderId(request.getSenderId())
-                .conversationId(request.getConversationId())
-                .messageType("JOIN")
-                .attachments(Collections.emptyList())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
+    public void addUser(@Payload HandleSocketRequest request) {
+        log.info("User joined: {}", request.getUserTargetIds().toArray());
+        RoleUserInConversation role = conversationsMemberService.getRoleUserInConversation(request.getConversationId(),
+                request.getUserId());
+        if (role.getRole() == MemberRole.ADMIN) {
+            conversationsMemberService.addMemberInGroup(request.getConversationId(), request.getUserTargetIds());
+            MessageResponse messageResponse = messagesService.createAddMemberMessage(request);
+            messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), messageResponse);
+        }
     }
 
     @MessageMapping("/chat.deleteUser")
     public void deleteUser(@Payload HandleSocketRequest request) {
-        log.info("User deleted: {}", request.getUserDeleteId());
-        RoleUserInConversation role = conversationsMemberService.getRoleUserInConversation(request.getConversationId(), request.getUserId());
+        log.info("User deleted: {}", request.getUserTargetIds().get(0));
+        RoleUserInConversation role = conversationsMemberService.getRoleUserInConversation(request.getConversationId(),
+                request.getUserId());
         if (role.getRole() == MemberRole.ADMIN) {
-            conversationsMemberService.removeMemberInGroup(request.getConversationId(), request.getUserDeleteId());
-            ChatMessageResponse response = ChatMessageResponse.builder()
-                .conversationId(request.getConversationId())
-                .content(request.getUserDeleteName() + " has been removed from the group by " + role.getUserName())
-                .messageType("REMOVE_BY_ADMIN")
-                .timestamp(LocalDateTime.now())
-                .build();
-            messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
-        } 
+            conversationsMemberService.removeMemberInGroup(request.getConversationId(),
+                    request.getUserTargetIds().get(0));
+            MessageResponse messageResponse = messagesService.createRemoveMemberMessage(request);
+            messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), messageResponse);
+        }
+    }
+
+    @MessageMapping("/chat.leaveGroup")
+    public void leaveGroup(@Payload HandleSocketRequest request) {
+        log.info("User leaving group: {}", request.getUserId());
+        MessageResponse messageResponse = messagesService.createLeaveMessage(request);
+        conversationsMemberService.leaveGroup(request.getConversationId(), request.getUserId());
+        messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), messageResponse);
     }
 }

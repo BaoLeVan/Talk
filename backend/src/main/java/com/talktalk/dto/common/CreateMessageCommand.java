@@ -1,11 +1,10 @@
-package com.talktalk.dto.response;
+package com.talktalk.dto.common;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.talktalk.exception.enums.MessageAction;
-import com.talktalk.exception.enums.MessageStatus;
 import com.talktalk.exception.enums.MessageType;
+import com.talktalk.model.document.Attachment;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,16 +18,17 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MessageResponse {
+public class CreateMessageCommand {
     Long conversationId;
-    UserResponse user;
+    Long senderId;
+
     String content;
-    MessageStatus status;
+
     MessageType messageType;
     MessageAction action;
-    LocalDateTime editedAt;
-    LocalDateTime deletedAt;
-    List<AttachmentResponse> attachments;
-    LocalDateTime createdAt;
-    LocalDateTime updatedAt;
+
+    Long targetUserId;
+    String targetUserName;
+
+    List<Attachment> attachments;
 }

@@ -3,34 +3,54 @@ import { Box, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
-import { getMessagesByConversationId } from '~/apis'
+import { getMessagesByConversationId, getListMemberByConversationId } from '~/apis'
 import { useUser } from './context/UserContext'
 import { useStomp } from '~/hooks/useStomp'
 import moment from 'moment'
+import { useChatStore } from './store/useChatStore'
 
 function ChatWindow({ conversation }) {
   const { user } = useUser();
-  const [messages, setMessages] = useState([])
+  const { messages, setMessages, addMessage } = useChatStore();
 
   const handleMessageReceived = useCallback((message) => {
-    setMessages((prevMessages) => [...prevMessages, {
+    const isSystemMessage = message?.messageType === 'SYSTEM';
+    const shouldRefreshMembers = ['REMOVE_MEMBER', 'LEAVE', 'JOIN', 'ADD_MEMBER'].includes(message?.action);
+
+    addMessage({
       content: message?.content,
       time: moment(message?.updatedAt || message?.createdAt || message?.timestamp).format('dddd h:mm A'),
-      isOwnMessage: message?.user?.id === user?.id,
-      senderName: message?.user?.userName,
-      avatar: message?.user?.avatar,
+      isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
+      senderName: isSystemMessage ? null : message?.user?.userName,
+      avatar: isSystemMessage ? null : message?.user?.avatar,
       status: message?.status,
-      attachments: message?.attachments || []
-    }])
-  }, [user?.id])
+      attachments: message?.attachments || [],
+      messageType: message?.messageType,
+      action: message?.action
+    })
 
-  const { connected, subscribeRoom, sendMessage } = useStomp();
+    if (isSystemMessage && shouldRefreshMembers && conversation?.conversationId) {
+      getListMemberByConversationId(conversation.conversationId).then(result => {
+        if (result) {
+          useChatStore.getState().setMembers(result.data);
+        }
+      });
+    }
+  }, [user?.id, conversation?.conversationId])
+
+  const { connected, subscribeRoom, unsubscribeRoom, sendMessage } = useStomp();
 
   useEffect(() => {
     if (conversation && connected) {
       subscribeRoom(conversation?.conversationId, handleMessageReceived);
     }
-  }, [conversation?.conversationId, connected, subscribeRoom, handleMessageReceived]);
+
+    return () => {
+      if (conversation?.conversationId) {
+        unsubscribeRoom(conversation.conversationId);
+      }
+    };
+  }, [conversation?.conversationId, connected, subscribeRoom, unsubscribeRoom, handleMessageReceived]);
 
   useEffect(() => {
     if (conversation) {
@@ -41,15 +61,20 @@ function ChatWindow({ conversation }) {
         });
         if (result) {
           const messages = result.data.messages;
-          const messageContent = messages.map((message) => ({
-            content: message?.content,
-            time: moment(message?.updatedAt).format('dddd h:mm A'),
-            isOwnMessage: message?.user?.id === user?.id,
-            senderName: message?.user?.userName,
-            avatar: message?.user?.avatar,
-            status: message?.status,
-            attachments: message?.attachments || []
-          }));
+          const messageContent = messages.map((message) => {
+            const isSystemMessage = message?.messageType === 'SYSTEM';
+            return {
+              content: message?.content,
+              time: moment(message?.updatedAt).format('dddd h:mm A'),
+              isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
+              senderName: isSystemMessage ? null : message?.user?.userName,
+              avatar: isSystemMessage ? null : message?.user?.avatar,
+              status: message?.status,
+              attachments: message?.attachments || [],
+              messageType: message?.messageType,
+              action: message?.action
+            };
+          });
           setMessages(messageContent);
         }
       }
@@ -119,7 +144,7 @@ function ChatWindow({ conversation }) {
         <HeaderChat conversation={conversation} />
       </Box>
       <Box sx={{ flexGrow: 1, height: 0, width: '100%', overflowY: 'auto', py: 2 }}>
-        <MessageItem messages={messages} setMessages={setMessages} />
+        <MessageItem />
       </Box>
       <Box sx={{ width: '100%', bgcolor: 'white' }}>
         <MessageInput conversation={conversation} sendMessage={sendMessage} />

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 import { getAllConversationsByUser, logout, setAccessToken } from '~/apis';
 import { toast } from 'react-toastify';
 import { useUser } from '~/components/context/UserContext';
-import useDebounce from './customHook/useDebounce';
+import useDebounce from '../hooks/useDebounce';
 import { TYPE } from '~/utils/constants';
 
 function SideBar({ selectedIndex, onSelectConversation, setConversation }) {

@@ -9,29 +9,38 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.talktalk.dto.response.RoleUserInConversation;
-import com.talktalk.model.entity.Conversations_members;
+import com.talktalk.model.entity.ConversationsMembers;
 
 import jakarta.transaction.Transactional;
 
 @Repository
-public interface ConversationsMembersRepository extends JpaRepository<Conversations_members, Long> {
+public interface ConversationsMembersRepository extends JpaRepository<ConversationsMembers, Long> {
 
-    @Query("SELECT cm FROM Conversations_members cm " +
-            "JOIN FETCH cm.conversations c " +
-            "WHERE cm.user.id = :userId AND cm.leftAt IS NULL AND c.deletedAt IS NULL " +
-            "ORDER BY c.lastMessageAt DESC")
-    List<Conversations_members> findAllByUserId(@Param("userId") Long userId);
+        @Query("SELECT cm FROM ConversationsMembers cm " +
+                        "JOIN FETCH cm.conversations c " +
+                        "WHERE cm.user.id = :userId AND cm.leftAt IS NULL AND c.deletedAt IS NULL " +
+                        "ORDER BY c.lastMessageAt DESC")
+        List<ConversationsMembers> findAllByUserId(@Param("userId") Long userId);
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE Conversations_members cm SET cm.leftAt = CURRENT_TIMESTAMP WHERE cm.conversations.id = :conversationId AND cm.user.id = :userDeleteId")
-    void removeMemberInGroup(@Param("conversationId") Long conversationId, @Param("userDeleteId") Long userDeleteId);
+        @Modifying
+        @Transactional
+        @Query("UPDATE ConversationsMembers cm SET cm.leftAt = CURRENT_TIMESTAMP WHERE cm.conversations.id = :conversationId AND cm.user.id = :userDeleteId")
+        void removeMemberInGroup(@Param("conversationId") Long conversationId,
+                        @Param("userDeleteId") Long userDeleteId);
 
-    @Query("SELECT new com.talktalk.dto.response.RoleUserInConversation(cm.user.id, cm.user.userName, cm.role) FROM Conversations_members cm "
-            +
-            "WHERE cm.conversations.id = :conversationId AND cm.user.id = :userId AND cm.leftAt IS NULL AND cm.conversations.deletedAt IS NULL")
-    RoleUserInConversation getRoleUserInConversation(@Param("conversationId") Long conversationId,
-            @Param("userId") Long userId);
+        @Query("SELECT new com.talktalk.dto.response.RoleUserInConversation(cm.user.id, cm.user.userName, cm.role) FROM ConversationsMembers cm "
+                        +
+                        "WHERE cm.conversations.id = :conversationId AND cm.user.id = :userId AND cm.leftAt IS NULL AND cm.conversations.deletedAt IS NULL")
+        RoleUserInConversation getRoleUserInConversation(@Param("conversationId") Long conversationId,
+                        @Param("userId") Long userId);
 
-    boolean existsByConversationsIdAndUserIdAndLeftAtIsNull(Long conversationId, Long userId);
+        boolean existsByConversationsIdAndUserIdAndLeftAtIsNull(Long conversationId, Long userId);
+
+        boolean existsByConversationsIdAndUserIdAndLeftAtNotNull(Long conversationId, Long userId);
+
+        @Modifying
+        @Transactional
+        @Query("UPDATE ConversationsMembers cm SET cm.leftAt = NULL, cm.joinedAt = CURRENT_TIMESTAMP WHERE cm.conversations.id = :conversationId AND cm.user.id = :userAddId")
+        void updateMemberJoinedAtInGroup(@Param("conversationId") Long conversationId,
+                        @Param("userAddId") Long userAddId);
 }

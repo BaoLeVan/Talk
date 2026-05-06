@@ -13,7 +13,9 @@ import lombok.experimental.FieldDefaults;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.talktalk.exception.enums.MessageAction;
 import com.talktalk.exception.enums.MessageStatus;
+import com.talktalk.exception.enums.MessageType;
 import com.talktalk.model.entity.BaseEntity;
 
 @Document(collection = "messages")
@@ -27,6 +29,8 @@ public class Message extends BaseEntity {
     Long conversationId;
     Long senderId;
     String content;
+    MessageType messageType;
+    MessageAction action;
     MessageStatus status;
     LocalDateTime deletedAt;
     List<Attachment> attachments;

@@ -50,7 +50,7 @@ public class User extends BaseEntity {
     LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "user")
-    List<Conversations_members> conversationsMembers;
+    List<ConversationsMembers> conversationsMembers;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "usr_id"), inverseJoinColumns = @JoinColumn(name = "role_name"))

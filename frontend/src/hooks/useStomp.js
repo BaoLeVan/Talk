@@ -90,5 +90,5 @@ export const useStomp = () => {
         }
     }, [connected]);
 
-    return { connected, sendMessage, subscribeRoom };
+    return { connected, sendMessage, subscribeRoom, unsubscribeRoom };
 };

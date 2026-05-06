@@ -65,6 +65,13 @@ export const getCurrentUser = async () => {
     return response.data;
 }
 
+export const searchUsers = async (keyword) => {
+    const response = await authorizeAxios.get(`${API_ROOT}/api/v1/users/search`, {
+        params: { keyword }
+    });
+    return response.data;
+}
+
 //messages
 export const getMessagesByConversationId = async (query) => {
     const response = await authorizeAxios.get(`${API_ROOT}/api/v1/messages`, { params: query });
