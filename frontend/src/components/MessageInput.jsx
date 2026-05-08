@@ -11,11 +11,13 @@ import { useDropzone } from 'react-dropzone';
 import { acceptFilesValidator } from '~/utils/common';
 import { toast } from 'react-toastify';
 import { useUser } from './context/UserContext';
+import { uploadFile } from '~/apis/attachmentApi';
 
 function MessageInput({ conversation, sendMessage }) {
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const inputRef = useRef(null);
   const { user } = useUser();
 
@@ -30,12 +32,10 @@ function MessageInput({ conversation, sendMessage }) {
     }
 
     const newFiles = acceptedFiles.map(file => ({
-      url: URL.createObjectURL(file),
-      name: file.name,
-      type: file.type,
-      size: file.size
+      file: file,
+      url: URL.createObjectURL(file)
     }));
-    setFiles(prevFiles => [...prevFiles, ...newFiles]); // Lưu file vào state để xử lý sau
+    setFiles(prevFiles => [...prevFiles, ...newFiles]);
     inputRef.current.focus();
   }, []);
 
@@ -72,21 +72,35 @@ function MessageInput({ conversation, sendMessage }) {
 
   const { handleSubmit } = useForm()
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!conversation || !user || (!message && files.length === 0)) {
       return;
     }
 
-    sendMessage('/app/chat.sendMessage', {
-      senderId: user.id,
-      conversationId: conversation.conversationId,
-      content: message,
-      messageType: 'CHAT',
-      attachments: (files || []).map((file) => file.url)
-    })
+    try {
+      setUploading(true);
 
-    setFiles([])
-    setMessage('')
+      const attachments = await Promise.all(
+        files.map(f => uploadFile(f.file))
+      );
+
+      sendMessage('/app/chat.sendMessage', {
+        senderId: user.id,
+        conversationId: conversation.conversationId,
+        content: message,
+        messageType: 'CHAT',
+        attachments: attachments
+      })
+
+      setFiles([])
+      setMessage('')
+    } catch (error) {
+      toast.error('Failed to upload files');
+      setFiles([])
+      setMessage('')
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -169,7 +183,7 @@ function MessageInput({ conversation, sendMessage }) {
                 {/* File Previews nằm TRONG vùng box */}
                 {files.length > 0 && (
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {files.map((file, index) => (
+                    {files.map((fileItem, index) => (
                       <Box key={index} sx={{
                         position: 'relative',
                         width: 60,
@@ -179,11 +193,11 @@ function MessageInput({ conversation, sendMessage }) {
                         border: '1px solid #e0e0e0',
                         bgcolor: 'background.paper'
                       }}>
-                        {file.type.startsWith('image/') ? (
-                          <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : file.type.startsWith('video/') ? (
+                        {fileItem.file.type.startsWith('image/') ? (
+                          <img src={fileItem.url} alt={fileItem.file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : fileItem.file.type.startsWith('video/') ? (
                           <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-                            <video src={file.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <video src={fileItem.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.3)' }}>
                               <Box sx={{ width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderLeft: '14px solid white', ml: '4px' }} />
                             </Box>
@@ -202,7 +216,7 @@ function MessageInput({ conversation, sendMessage }) {
                               display: '-webkit-box',
                               WebkitLineClamp: 1,
                               WebkitBoxOrient: 'vertical'
-                            }}>{file.name}</Typography>
+                            }}>{fileItem.file.name}</Typography>
                           </Box>
                         )}
                         <IconButton
@@ -246,6 +260,7 @@ function MessageInput({ conversation, sendMessage }) {
           <Box>
             {message || files.length > 0 ? (<IconButton
               type='submit'
+              disabled={uploading}
               sx={{
                 ml: 1,
                 bgcolor: 'primary.main',

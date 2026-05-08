@@ -2,6 +2,8 @@ package com.talktalk.dto.request;
 
 import java.util.List;
 
+import com.talktalk.model.document.Attachment;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +18,5 @@ public class ChatMessageRequest {
     private Long conversationId;
     private String content;
     private String messageType;
-    private List<String> attachments;
+    private List<Attachment> attachments;
 }

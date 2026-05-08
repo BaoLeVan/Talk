@@ -28,7 +28,7 @@ public class ConversationsServiceImpl implements ConversationsService {
     @Override
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public List<ConversationResponse> getAllConversation(Long userId, String title) {
-        List<ConversationResponse> conversations = conversationsRepository.getAllConversation(userId, title);
+            List<ConversationResponse> conversations = conversationsRepository.getAllConversation(userId, title);
         Map<Long, ConversationResponse> conversationMap = new LinkedHashMap<>();
         conversations.forEach(conversation -> conversationMap.put(conversation.getConversationId(), conversation));
         return new ArrayList<>(conversationMap.values());
