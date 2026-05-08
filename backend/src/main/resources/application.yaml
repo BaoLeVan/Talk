@@ -1,6 +1,10 @@
 spring:
   application:
     name: talk
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   mongodb:
     uri: mongodb+srv://levannhatbao29_db_user:LGfwtMev14cXyH4E@cluster-jv-baole.gqk85p4.mongodb.net/talk?appName=Cluster-JV-BaoLe
   datasource:
@@ -30,3 +34,12 @@ jwt:
   secret: Do8q4JpVmM0UST7pIvpGUMXdXMH0wlF0z6RHXm6d1XQ=
   validDuration: 60000m
   refreshableDuration: 7d
+
+cloudinary:
+  cloud-name: dwezdjte2
+  api-key: 383514231542653
+  api-secret: IpwVbYPSj4XLx10H6f6H_oUz8rY
+
+firebase:
+  storage-bucket: talk-82987.appspot.com
+

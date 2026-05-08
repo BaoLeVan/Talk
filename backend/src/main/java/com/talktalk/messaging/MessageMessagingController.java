@@ -1,8 +1,5 @@
 package com.talktalk.messaging;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
-
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -10,7 +7,6 @@ import org.springframework.stereotype.Controller;
 
 import com.talktalk.dto.request.ChatMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
-import com.talktalk.dto.response.ChatMessageResponse;
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.dto.response.RoleUserInConversation;
 import com.talktalk.exception.enums.MemberRole;

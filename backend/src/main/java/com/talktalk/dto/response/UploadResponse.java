@@ -1,7 +1,5 @@
 package com.talktalk.dto.response;
 
-import java.time.LocalDateTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,11 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AttachmentResponse {
+public class UploadResponse {
     private String url;
-    private String fileName;
-    private String contentType;
+    private String publicId;
+    private String format;
     private Long size;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String resourceType;
+    private String thumbnail;
 }

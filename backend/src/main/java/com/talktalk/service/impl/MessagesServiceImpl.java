@@ -23,12 +23,14 @@ import com.talktalk.exception.enums.MessageAction;
 import com.talktalk.exception.enums.MessageStatus;
 import com.talktalk.exception.enums.MessageType;
 import com.talktalk.mapper.MessageMapper;
+import com.talktalk.model.document.Attachment;
 import com.talktalk.model.document.Message;
 import com.talktalk.model.entity.Conversations;
 import com.talktalk.model.entity.User;
 import com.talktalk.repository.jpa.ConversationsMembersRepository;
 import com.talktalk.repository.jpa.ConversationsRepository;
 import com.talktalk.repository.jpa.UserRepository;
+import com.talktalk.repository.mongo.AttachmentRepository;
 import com.talktalk.repository.mongo.MessagesRepository;
 import com.talktalk.service.MessagesService;
 
@@ -46,6 +48,7 @@ public class MessagesServiceImpl implements MessagesService {
         UserRepository userRepository;
         ConversationsRepository conversationsRepository;
         ConversationsMembersRepository conversationsMembersRepository;
+        AttachmentRepository attachmentRepository;
 
         @Override
         public MessageResponse createMessage(ChatMessageRequest request) {
@@ -54,7 +57,7 @@ public class MessagesServiceImpl implements MessagesService {
                 cmd.setSenderId(request.getSenderId());
                 cmd.setContent(request.getContent());
                 cmd.setMessageType(MessageType.CHAT);
-                cmd.setAttachments(Collections.emptyList());
+                cmd.setAttachments(request.getAttachments());
 
                 Message saved = createMessageCommon(cmd);
 
@@ -132,6 +135,11 @@ public class MessagesServiceImpl implements MessagesService {
                         throw new AppException(ErrorCode.FORBIDDEN);
                 }
 
+                List<Attachment> attachments = Collections.emptyList();
+                if (cmd.getAttachments() != null && !cmd.getAttachments().isEmpty()) {
+                        attachments = attachmentRepository.saveAll(cmd.getAttachments());
+                }
+
                 LocalDateTime now = LocalDateTime.now();
 
                 Message message = Message.builder()
@@ -140,8 +148,7 @@ public class MessagesServiceImpl implements MessagesService {
                                 .content(cmd.getContent())
                                 .messageType(cmd.getMessageType())
                                 .action(cmd.getAction())
-                                .attachments(cmd.getAttachments() != null ? cmd.getAttachments()
-                                                : Collections.emptyList())
+                                .attachments(attachments)
                                 .status(MessageStatus.SENT)
                                 .deletedAt(null)
                                 .build();

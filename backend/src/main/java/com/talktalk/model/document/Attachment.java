@@ -23,5 +23,5 @@ public class Attachment extends BaseEntity {
     String fileName;
     String contentType; // image/png, video/mp4
     Long size;
-    String thumbnail;
+    String publicId;
 }

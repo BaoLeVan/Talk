@@ -38,7 +38,8 @@ public enum ErrorCode {
     PASSWORD_WRONG(1005, "Password is wrong", HttpStatus.BAD_REQUEST),
 
     // Mail
-    FAILED_TO_SEND_OTP(1100, "Failed to send OTP", HttpStatus.INTERNAL_SERVER_ERROR);
+    FAILED_TO_SEND_OTP(1100, "Failed to send OTP", HttpStatus.INTERNAL_SERVER_ERROR),
+    UPLOAD_FAILED(1101, "File upload failed", HttpStatus.INTERNAL_SERVER_ERROR);
 
     int code;
     String message;
