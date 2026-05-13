@@ -10,8 +10,8 @@ import DialogAddMembers from './Form/DialogAddMembers';
 import { useUser } from './context/UserContext';
 import { TYPE } from '~/utils/constants';
 import { getListMemberByConversationId } from '~/apis';
-import { useChatStore } from './store/useChatStore';
-import { useStomp } from '~/hooks/useStomp';
+import { useChatStore } from '~/store/useChatStore';
+import { useStomp } from '~/components/context/StompContext';
 
 
 function RightPanel({ conversation }) {
@@ -22,7 +22,7 @@ function RightPanel({ conversation }) {
 
     const { user } = useUser();
     const { members, setMembers } = useChatStore();
-    const { connected, subscribeRoom, sendMessage } = useStomp();
+    const { sendMessage } = useStomp();
 
     useEffect(() => {
         if (conversation?.conversationType === TYPE.GROUP) {
@@ -45,7 +45,7 @@ function RightPanel({ conversation }) {
         setUserDelete(userDelete)
     }
 
-    const deleteMember = (userDeleteId, userDeleteName, conversationId) => {
+    const deleteUser = (userDeleteId, userDeleteName, conversationId) => {
         sendMessage(`/app/chat.deleteUser`, {
             conversationId: conversationId,
             userId: user?.id,
@@ -135,203 +135,144 @@ function RightPanel({ conversation }) {
 
     return (
         <>
-            <Paper sx={{
+            <Paper elevation={0} sx={{
                 height: '100%',
                 width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                borderRadius: 0,
+                bgcolor: 'background.paper'
             }}>
                 <Box sx={{
-                    borderBottom: '1px solid #e0e0e0', flexShrink: 0,
-                    overflow: 'hidden'
+                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    flexShrink: 0,
+                    px: 2.5,
+                    py: 2
                 }}>
-                    <Typography sx={{
-                        p: 2,
-                        fontWeight: '600',
-                        fontSize: '1.25rem'
-                    }}>Contact Info</Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: 'text.primary' }}>Contact Info</Typography>
                 </Box>
                 {conversation.conversationType === TYPE.GROUP ?
                     <Box sx={{
-                        px: '20px',
-                        py: '32px',
+                        px: 3,
+                        py: 3,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        borderBottom: '1px solid #e0e0e0',
+                        borderBottom: '1px solid rgba(0,0,0,0.06)',
                         flexShrink: 0,
-                        overflow: 'hidden'
+                        gap: 1
                     }}>
-                        <Avatar
-                            src={conversation?.avatar}
-                            sx={{
-                                width: '96px',
-                                height: '96px',
-                                marginBottom: 2
-                            }} />
-                        <Typography sx={{
-                            fontSize: '1.2rem',
-                            fontWeight: '600',
-                            marginBottom: 0.5
-                        }}>{conversation?.conversationTitle}</Typography>
+                        <Avatar src={conversation?.avatar} sx={{ width: 80, height: 80, boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }} />
+                        <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: 'text.primary' }}>
+                            {conversation?.conversationTitle}
+                        </Typography>
                     </Box>
                     : <Box sx={{
-                        px: '20px',
-                        py: '32px',
+                        px: 3,
+                        py: 3,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        borderBottom: '1px solid #e0e0e0',
+                        borderBottom: '1px solid rgba(0,0,0,0.06)',
                         flexShrink: 0,
-                        overflow: 'hidden'
+                        gap: 1
                     }}>
-                        <Avatar
-                            src={conversation?.userAvatar}
-                            sx={{
-                                width: '96px',
-                                height: '96px',
-                                marginBottom: 2
-                            }} />
-                        <Typography sx={{
-                            fontSize: '1.2rem',
-                            fontWeight: '600',
-                            marginBottom: 0.5
-                        }}>{conversation?.userName}</Typography>
+                        <Avatar src={conversation?.userAvatar} sx={{ width: 80, height: 80, boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }} />
+                        <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: 'text.primary' }}>
+                            {conversation?.userName}
+                        </Typography>
                     </Box>
                 }
-                <Box sx={{ borderBottom: '1px solid #e0e0e0', flexGrow: 1, overflow: 'hidden' }}>
+                <Box sx={{ borderBottom: '1px solid rgba(0,0,0,0.06)', flexGrow: 1, overflow: 'hidden' }}>
                     {conversation.conversationType === TYPE.GROUP ?
-                        <List
-                            sx={{
-                                width: '100%',
-                                height: '100%',
-                                bgcolor: 'background.paper',
-                                position: 'relative',
-                                overflow: 'auto',
-                            }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2 }}>
-                                <Typography sx={{ fontWeight: 'bold' }}>{members.length} Members</Typography>
-                                <IconButton size='large' onClick={() => setOpenAddDialog(true)}>
+                        <List sx={{ width: '100%', height: '100%', bgcolor: 'background.paper', position: 'relative', overflow: 'auto', p: 0 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2.5, py: 1.5 }}>
+                                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary' }}>{members.length} Members</Typography>
+                                <IconButton size='small' onClick={() => setOpenAddDialog(true)} sx={{ color: 'primary.main' }}>
                                     <AddCircleIcon fontSize='small' />
                                 </IconButton>
                             </Box>
                             {members.map((member) => (
                                 <ListItemButton
                                     key={member.userId}
-                                    sx={{ p: 0 }}
+                                    sx={{
+                                        px: 2,
+                                        py: 1,
+                                        mx: 1,
+                                        borderRadius: '8px',
+                                        '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                                    }}
                                     selected={selectedIndex === member.userId}
                                     onClick={(event) => handleListItemClick(event, member.userId)}
                                 >
-                                    <ListItem alignItems="flex-start">
+                                    <ListItem alignItems="flex-start" sx={{ p: 0 }}>
                                         <ListItemAvatar>
-                                            <Badge
-                                                anchorOrigin={{
-                                                    vertical: 'bottom',
-                                                    horizontal: 'right',
-                                                }}
-                                                variant="dot"
-                                                color="success">
-                                                <Avatar alt="Remy Sharp" src={member.userAvatar} />
+                                            <Badge anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color="success">
+                                                <Avatar alt={member.userName} src={member.userAvatar} sx={{ width: 36, height: 36 }} />
                                             </Badge>
                                         </ListItemAvatar>
-                                        <ListItemText
-                                            primary={member.userName}
-                                            secondary={
-                                                <React.Fragment>
-                                                    <Typography
-                                                        component="span"
-                                                        variant="body2"
-                                                        sx={{ color: 'text.primary', display: 'inline' }}
-                                                    >
-                                                        {member?.isOnline}
-                                                    </Typography>
-                                                </React.Fragment>
-                                            }
-                                        />
+                                        <ListItemText primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{member.userName}</Typography>} />
                                         {user?.id !== member?.userId && member?.userRole !== 'ADMIN' && (
-                                            <Box sx={{ height: '100%', }}>
-                                                <IconButton onClick={e => handleDelete(member)} size='large' color='error'>
-                                                    <Close fontSize="small" />
-                                                </IconButton>
-                                            </Box>
+                                            <IconButton onClick={e => handleDelete(member)} size='small' color='error'>
+                                                <Close fontSize="small" />
+                                            </IconButton>
                                         )}
                                     </ListItem>
                                 </ListItemButton>
                             ))}
                         </List> :
-                        <Box sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            px: 3,
-                            py: 2,
-                            gap: 2,
-                            borderBottom: '1px solid #e0e0e0'
-                        }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Box sx={{
-                                    backgroundColor: 'rgb(240, 242, 245)',
-                                    p: 1,
-                                    borderRadius: '50%'
-                                }}>
-                                    <EmailOutlined sx={{ color: 'text.secondary' }} />
+                        <Box sx={{ display: 'flex', flexDirection: 'column', px: 2.5, py: 2, gap: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ bgcolor: '#f0f4ff', p: 1, borderRadius: '10px' }}>
+                                    <EmailOutlined sx={{ color: 'primary.main', fontSize: 20 }} />
                                 </Box>
-                                <Box sx={{
-                                    flexGrow: 1,
-                                    ml: 2
-                                }}>
-                                    <Typography fontSize={13} color="text.secondary">Email</Typography>
-                                    <Typography fontSize={14} variant="body2" color="text.primary">{user.email}</Typography>
+                                <Box>
+                                    <Typography fontSize={12} color="text.secondary" sx={{ fontWeight: 500 }}>Email</Typography>
+                                    <Typography fontSize={13} variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>{user.email}</Typography>
                                 </Box>
                             </Box>
                         </Box>
                     }
                 </Box>
-                <Box sx={{ borderBottom: '1px solid #e0e0e0', flexShrink: 0 }}>
-                    <Typography sx={{ px: 2, py: 2, fontWeight: '600' }}>Settings</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <NotificationsNoneIcon sx={{ color: 'text.secondary' }} fontSize='large' />
-                            <Typography sx={{ ml: 1 }}>Notifications</Typography>
+                <Box sx={{ borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0, px: 2.5, py: 1.5 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary', mb: 1 }}>Settings</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <NotificationsNoneIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>Notifications</Typography>
                         </Box>
                         <SwitchCustom />
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <ShieldIcon sx={{ color: 'text.secondary' }} fontSize='large' />
-                            <Typography sx={{ ml: 1 }}>Block User</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ShieldIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>Block User</Typography>
                         </Box>
                         <SwitchCustom />
                     </Box>
                 </Box>
                 {conversation.conversationType === TYPE.GROUP ? (
-                    <Box sx={{ display: 'flex', px: 1, py: 2, flexShrink: 0 }}>
-                        <Button sx={{
-                            width: '50%',
-                            py: 1,
-                            mx: 1,
-                            backgroundColor: 'oklch(97.1% 0.013 17.38)',
-                            fontWeight: 'bold'
-                        }} color='error' onClick={() => leaveGroup(conversation?.conversationId)}>Leave Group</Button>
-                        <Button sx={{
-                            width: '50%',
-                            py: 1,
-                            mx: 1,
-                            backgroundColor: 'oklch(97.1% 0.013 17.38)',
-                            fontWeight: 'bold'
-                        }} color='error' > Delete Group</Button>
+                    <Box sx={{ display: 'flex', px: 2, py: 2, gap: 1, flexShrink: 0 }}>
+                        <Button fullWidth variant="outlined" color='error'
+                            sx={{ borderRadius: '10px', fontWeight: 600, textTransform: 'none' }}
+                            onClick={() => leaveGroup(conversation?.conversationId)}>
+                            Leave Group
+                        </Button>
+                        <Button fullWidth variant="outlined" color='error'
+                            sx={{ borderRadius: '10px', fontWeight: 600, textTransform: 'none' }}>
+                            Delete Group
+                        </Button>
                     </Box>
                 ) : (
-                    <Box sx={{ px: 1, py: 2, flexShrink: 0 }}>
-                        <Button sx={{
-                            width: '100%',
-                            py: 1,
-                            backgroundColor: 'oklch(97.1% 0.013 17.38)',
-                            fontWeight: 'bold'
-                        }} color='error'>Delete Chat</Button>
+                    <Box sx={{ px: 2, py: 2, flexShrink: 0 }}>
+                        <Button fullWidth variant="outlined" color='error'
+                            sx={{ borderRadius: '10px', fontWeight: 600, textTransform: 'none' }}>
+                            Delete Chat
+                        </Button>
                     </Box>
                 )}
-            </Paper >
+            </Paper>
             <DialogConfirm
                 openDialog={openDialog}
                 setOpenDialog={setOpenDialog}

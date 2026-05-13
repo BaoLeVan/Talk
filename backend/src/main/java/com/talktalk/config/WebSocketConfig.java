@@ -34,9 +34,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Enable a simple memory-based message broker to carry the messages back to the client on destinations prefixed with /topic
+        // Enable a simple memory-based message broker to carry the messages back to the
+        // client on destinations prefixed with /topic
         config.enableSimpleBroker("/topic", "/queue");
-        // Designate the /app prefix for messages that are bound for methods annotated with @MessageMapping
+        // Designate the /app prefix for messages that are bound for methods annotated
+        // with @MessageMapping
         config.setApplicationDestinationPrefixes("/app");
         // For user-specific messages
         config.setUserDestinationPrefix("/user");
@@ -59,7 +61,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String authToken = accessor.getFirstNativeHeader("Authorization");
-
                     if (authToken != null && authToken.startsWith("Bearer ")) {
                         String token = authToken.substring(7);
 
@@ -72,16 +73,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             List<SimpleGrantedAuthority> authorities = List.of();
                             if (scope != null && !scope.isEmpty()) {
                                 authorities = List.of(scope.split(" "))
-                                    .stream()
-                                    .map(SimpleGrantedAuthority::new)
-                                    .collect(Collectors.toList());
+                                        .stream()
+                                        .map(SimpleGrantedAuthority::new)
+                                        .collect(Collectors.toList());
                             }
 
                             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                                email,
-                                null,
-                                authorities
-                            );
+                                    email,
+                                    null,
+                                    authorities);
 
                             accessor.setUser(authentication);
 

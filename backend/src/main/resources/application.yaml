@@ -40,6 +40,3 @@ cloudinary:
   api-key: 383514231542653
   api-secret: IpwVbYPSj4XLx10H6f6H_oUz8rY
 
-firebase:
-  storage-bucket: talk-82987.appspot.com
-
