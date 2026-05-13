@@ -2,13 +2,13 @@ package com.talktalk.service.impl;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.talktalk.exception.AppException;
 import com.talktalk.exception.ErrorCode;
 import com.talktalk.exception.enums.FileCategory;
@@ -31,8 +31,15 @@ public class CloudinaryUploadServiceImpl implements CloudinaryUploadService {
     @Override
     public Attachment uploadToCloudinary(MultipartFile file, FileCategory category, LocalDateTime now) {
         try {
-            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
-                    ObjectUtils.asMap("folder", "chat-app/messages"));
+            Map<String, Object> uploadParams = new HashMap<>();
+            uploadParams.put("folder", "chat-app/messages");
+
+            if (category == FileCategory.FILE) {
+                uploadParams.put("resource_type", "raw");
+                uploadParams.put("flags", "attachment:" + file.getOriginalFilename());
+            }
+
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
             String url = (String) uploadResult.get("secure_url");
             String format = (String) uploadResult.get("format");
             Long size = ((Number) uploadResult.get("bytes")).longValue();

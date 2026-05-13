@@ -22,7 +22,6 @@ function MessageInput({ conversation, sendMessage }) {
   const { user } = useUser();
 
   const onDrop = useCallback((acceptedFiles) => {
-
     for (const acceptedFile of acceptedFiles) {
       const error = acceptFilesValidator(acceptedFile);
       if (error) {
@@ -32,64 +31,54 @@ function MessageInput({ conversation, sendMessage }) {
     }
 
     const newFiles = acceptedFiles.map(file => ({
-      file: file,
+      file,
       url: URL.createObjectURL(file)
     }));
     setFiles(prevFiles => [...prevFiles, ...newFiles]);
-    inputRef.current.focus();
+    inputRef.current?.focus();
   }, []);
 
   const handleRemoveFile = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
-    inputRef.current.focus();
+    inputRef.current?.focus();
   };
 
-  const {
-    getRootProps,
-    getInputProps,
-    open,
-    isDragActive
-  } = useDropzone({
+  const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
     onDrop,
     noClick: true,
     noKeyboard: true,
     accept: {
-      "image/*": [],
-      "video/*": [],
-      "application/pdf": [],
-      "application/msword": [],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [],
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation": [],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [],
+      'image/*': [],
+      'video/*': [],
+      'application/pdf': [],
+      'application/msword': [],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': [],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
     }
   });
 
   const handleEmojiClick = (emoji) => {
     setShowEmojiPicker(false);
     setMessage(message + emoji.emoji);
-    inputRef.current.focus();
+    inputRef.current?.focus();
   }
 
   const { handleSubmit } = useForm()
 
   const handleSend = async () => {
-    if (!conversation || !user || (!message && files.length === 0)) {
-      return;
-    }
+    if (!conversation || !user || (!message && files.length === 0)) return;
 
     try {
       setUploading(true);
-
-      const attachments = await Promise.all(
-        files.map(f => uploadFile(f.file))
-      );
+      const attachments = await Promise.all(files.map(f => uploadFile(f.file)));
 
       sendMessage('/app/chat.sendMessage', {
         senderId: user.id,
         conversationId: conversation.conversationId,
         content: message,
         messageType: 'CHAT',
-        attachments: attachments
+        attachments
       })
 
       setFiles([])
@@ -104,83 +93,70 @@ function MessageInput({ conversation, sendMessage }) {
   }
 
   return (
-    <Box {...getRootProps()} sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      p: 2,
-      gap: 1,
-      position: 'relative'
-    }}>
+    <Box {...getRootProps()} sx={{ position: 'relative' }}>
       <input {...getInputProps()} />
-      {/* Overlay khi drag */}
+
       {isDragActive && (
         <Box sx={{
           position: 'absolute',
           inset: 0,
-          bgcolor: 'rgba(0,0,0,0.1)',
+          bgcolor: 'rgba(91,103,255,0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: '10px',
+          borderRadius: '28px',
+          border: '2px dashed #5B67FF',
           zIndex: 10
         }}>
-          <Typography variant='body1'>Drop file here (25MB)</Typography>
+          <Typography variant='body2' sx={{ color: '#5B67FF', fontWeight: 600 }}>Drop file here (25MB)</Typography>
         </Box>
       )}
 
-      {/* Input Row Container */}
-      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, width: '100%' }}>
-        <Box>
-          <IconButton
-            id="basic-button"
-            aria-controls={open ? 'basic-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? 'true' : undefined}
-            onClick={open}>
-            <AttachFileIcon sx={{
-              rotate: '45deg'
-            }} />
-          </IconButton>
-        </Box>
-        <Box sx={{
-          position: 'relative',
-        }}>
-          <IconButton title='Add enoji' onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
-            <SentimentSatisfiedIcon />
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        gap: 1,
+        background: '#FFFFFF',
+        borderRadius: '28px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+        px: 2,
+        py: 1.5,
+        position: 'relative'
+      }}>
+        <IconButton onClick={open} sx={{ color: '#6B7280', '&:hover': { color: '#5B67FF', bgcolor: '#F1F3FF' } }}>
+          <AttachFileIcon sx={{ rotate: '45deg' }} fontSize='small' />
+        </IconButton>
+
+        <Box sx={{ position: 'relative' }}>
+          <IconButton title='Add emoji' onClick={() => setShowEmojiPicker(!showEmojiPicker)} sx={{ color: '#6B7280', '&:hover': { color: '#5B67FF', bgcolor: '#F1F3FF' } }}>
+            <SentimentSatisfiedIcon fontSize='small' />
           </IconButton>
           {showEmojiPicker && (
-            <Box sx={{
-              position: 'absolute',
-              bottom: '100%',
-              left: '0',
-              zIndex: 1,
-            }}>
-              <EmojiPicker
-                onEmojiClick={handleEmojiClick}
-                width={320}
-                height={400} />
+            <Box sx={{ position: 'absolute', bottom: '100%', left: 0, zIndex: 20 }}>
+              <EmojiPicker onEmojiClick={handleEmojiClick} width={320} height={400} />
             </Box>
           )}
         </Box>
-        <form style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1 }} onSubmit={handleSubmit(handleSend)}>
+
+        <form style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8 }} onSubmit={handleSubmit(handleSend)}>
           <Box sx={{ flexGrow: 1 }}>
             <FormControl fullWidth>
-              {/* Vùng ảo bọc cả preview và text input để trông như chúng nằm cùng trong 1 ô */}
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1,
-                p: 1,
-                pl: 2,
-                borderRadius: '20px',
-                backgroundColor: 'oklch(0.967 0.003 264.542)',
+                px: 2,
+                py: 1.25,
+                borderRadius: '24px',
+                backgroundColor: '#F8F9FC',
                 border: '1px solid transparent',
-                transition: 'border 0.2s',
+                transition: 'all 0.2s ease',
                 '&:focus-within': {
-                  border: '1px solid #4e93ccff',
+                  borderColor: '#5B67FF',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: '0 0 0 3px rgba(91,103,255,0.08)'
                 }
               }}>
-                {/* File Previews nằm TRONG vùng box */}
                 {files.length > 0 && (
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {files.map((fileItem, index) => (
@@ -190,7 +166,7 @@ function MessageInput({ conversation, sendMessage }) {
                         height: 60,
                         borderRadius: 2,
                         overflow: 'hidden',
-                        border: '1px solid #e0e0e0',
+                        border: '1px solid #EEF2FF',
                         bgcolor: 'background.paper'
                       }}>
                         {fileItem.file.type.startsWith('image/') ? (
@@ -203,24 +179,15 @@ function MessageInput({ conversation, sendMessage }) {
                             </Box>
                           </Box>
                         ) : (
-                          <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 0.5, bgcolor: '#e3f2fd', color: '#1976d2' }}>
+                          <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 0.5, bgcolor: '#EEF2FF', color: '#5B67FF' }}>
                             <InsertDriveFileIcon sx={{ fontSize: 28 }} />
-                            <Typography variant="caption" sx={{
-                              fontSize: '0.6rem',
-                              wordBreak: 'break-all',
-                              textAlign: 'center',
-                              lineHeight: 1,
-                              mt: 0.5,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 1,
-                              WebkitBoxOrient: 'vertical'
-                            }}>{fileItem.file.name}</Typography>
+                            <Typography variant='caption' sx={{ fontSize: '0.6rem', wordBreak: 'break-all', textAlign: 'center', lineHeight: 1, mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
+                              {fileItem.file.name}
+                            </Typography>
                           </Box>
                         )}
                         <IconButton
-                          size="small"
+                          size='small'
                           onClick={(e) => { e.stopPropagation(); handleRemoveFile(index); }}
                           sx={{
                             position: 'absolute',
@@ -248,7 +215,8 @@ function MessageInput({ conversation, sendMessage }) {
                     p: 0,
                     lineHeight: '1.5',
                     fontSize: '1rem',
-                    fontWeight: '400',
+                    fontWeight: 400,
+                    color: '#111827'
                   }}
                   disableUnderline
                   multiline
@@ -257,35 +225,35 @@ function MessageInput({ conversation, sendMessage }) {
               </Box>
             </FormControl>
           </Box>
+
           <Box>
-            {message || files.length > 0 ? (<IconButton
+            <IconButton
               type='submit'
-              disabled={uploading}
+              disabled={uploading || (!message && files.length === 0)}
               sx={{
                 ml: 1,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
+                width: 44,
+                height: 44,
+                borderRadius: '999px',
+                bgcolor: message || files.length > 0 ? 'transparent' : '#D1D5DB',
+                background: message || files.length > 0
+                  ? 'linear-gradient(135deg, #6EA8FE 0%, #5B67FF 50%, #7C5CFF 100%)'
+                  : '#D1D5DB',
+                color: '#FFFFFF',
+                boxShadow: message || files.length > 0 ? '0 8px 20px rgba(91,103,255,0.28)' : 'none',
+                rotate: '-45deg',
                 '&:hover': {
-                  bgcolor: 'primary.dark',
-                },
-                rotate: '-45deg'
-              }}>
-              <SendIcon />
-            </IconButton>) : (<IconButton
-              type='submit'
-              sx={{
-                ml: 1,
-                bgcolor: 'oklch(87.2% .01 258.338)',
-                color: 'white',
-                rotate: '-45deg'
+                  bgcolor: message || files.length > 0 ? 'transparent' : '#D1D5DB',
+                  transform: 'scale(1.02)'
+                }
               }}
             >
-              <SendIcon />
-            </IconButton>)}
+              <SendIcon fontSize='small' />
+            </IconButton>
           </Box>
         </form>
       </Box>
-    </Box >
+    </Box>
   )
 }
 

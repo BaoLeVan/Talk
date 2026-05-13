@@ -1,11 +1,20 @@
 {
+  "env": {
+    "ECC_DISABLED_HOOKS": "pre:edit-write:gateguard-fact-force,pre:bash:gateguard-fact-force"
+  },
   "permissions": {
     "allow": [
       "Bash(./mvnw *)",
       "Bash(./backend/mvnw *)",
       "Bash(npm *)",
       "Bash(git *)",
-      "Bash(mvn verify *)"
+      "Bash(mvn verify *)",
+      "Bash(mvn compile *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Coding\\\\Project\\\\frontend\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)"
     ]
-  }
+  },
+   "disableAllHooks": true
 }

@@ -39,7 +39,16 @@ public enum ErrorCode {
 
     // Mail
     FAILED_TO_SEND_OTP(1100, "Failed to send OTP", HttpStatus.INTERNAL_SERVER_ERROR),
-    UPLOAD_FAILED(1101, "File upload failed", HttpStatus.INTERNAL_SERVER_ERROR);
+    UPLOAD_FAILED(1101, "File upload failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Friend
+    FRIEND_NOT_FOUND(1200, "Friend not found", HttpStatus.NOT_FOUND),
+    SEND_REQUEST_TO_SELF(1201, "Cannot send friend request to self", HttpStatus.BAD_REQUEST),
+    FRIEND_ALREADY_EXIST(1202, "Friend already exist", HttpStatus.BAD_REQUEST),
+    FRIEND_REQUEST_ALREADY_SENT(1203, "Friend request already sent", HttpStatus.BAD_REQUEST),
+    FRIEND_REQUEST_NOT_FOUND(1204, "Friend request not found", HttpStatus.NOT_FOUND),
+    FRIEND_REQUEST_ALREADY_PROCESSED(1205, "Friend request already processed", HttpStatus.BAD_REQUEST),
+    FRIEND_REQUEST_NOT_BELONG_TO_USER(1206, "Friend request not belong to user", HttpStatus.BAD_REQUEST);
 
     int code;
     String message;

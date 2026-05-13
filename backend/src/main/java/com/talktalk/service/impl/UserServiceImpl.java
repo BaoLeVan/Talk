@@ -47,8 +47,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getById(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getById'");
+        return userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Override
@@ -88,4 +87,11 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::toUserResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public UserResponse findByEmailForSocket(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return userMapper.toUserResponse(user);
+    }
+
 }

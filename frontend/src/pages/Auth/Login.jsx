@@ -12,10 +12,12 @@ import { useNavigate } from 'react-router';
 import { login } from '~/apis';
 import { toast } from 'react-toastify';
 import { useUser } from '~/components/context/UserContext';
+import { useStomp } from '~/components/context/StompContext';
 
 function Login() {
     const [value, setValue] = useState("Login");
     const { setUser } = useUser();
+    const { reconnect } = useStomp();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -53,6 +55,7 @@ function Login() {
         if (result) {
             setUser(result.data.user);
             localStorage.setItem("user", JSON.stringify(result.data.user));
+            reconnect();
             navigate("/");
             toast.success("Login successfully");
         }

@@ -12,7 +12,6 @@ import com.talktalk.exception.enums.FileCategory;
 import com.talktalk.mapper.AttachmentMapper;
 import com.talktalk.model.document.Attachment;
 import com.talktalk.service.CloudinaryUploadService;
-import com.talktalk.service.FirebaseStorageService;
 import com.talktalk.service.UploadFileService;
 
 import lombok.AccessLevel;
@@ -27,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 public class UploadFileServiceImpl implements UploadFileService {
 
     CloudinaryUploadService cloudinaryUploadService;
-    FirebaseStorageService firebaseStorageService;
     AttachmentMapper attachmentMapper;
 
     @Override
@@ -35,13 +33,8 @@ public class UploadFileServiceImpl implements UploadFileService {
         try {
             FileCategory category = detectType(file);
             LocalDateTime now = LocalDateTime.now();
-            Attachment attachment;
 
-            if (category == FileCategory.IMAGE || category == FileCategory.VIDEO) {
-                attachment = cloudinaryUploadService.uploadToCloudinary(file, category, now);
-            } else {
-                attachment = firebaseStorageService.uploadToFirebase(file, now);
-            }
+            Attachment attachment = cloudinaryUploadService.uploadToCloudinary(file, category, now);
 
             return attachmentMapper.toAttachmentResponse(attachment);
         } catch (Exception e) {

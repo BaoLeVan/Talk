@@ -38,6 +38,8 @@ public class User extends BaseEntity {
     Long id;
     @Column(name = "usr_avatar")
     String avatar;
+    @Column(name = "usr_avatar_id")
+    String avatarId;
     @Column(name = "usr_user_name")
     String userName;
     @Column(name = "usr_email", unique = true, nullable = false)
@@ -55,4 +57,16 @@ public class User extends BaseEntity {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "usr_id"), inverseJoinColumns = @JoinColumn(name = "role_name"))
     Set<Role> roles;
+
+    @OneToMany(mappedBy = "sender")
+    List<FriendRequest> friendRequestSend;
+
+    @OneToMany(mappedBy = "receiver")
+    List<FriendRequest> friendRequestReceive;
+
+    @OneToMany(mappedBy = "userA")
+    List<Friend> friendA;
+
+    @OneToMany(mappedBy = "userB")
+    List<Friend> friendB;
 }

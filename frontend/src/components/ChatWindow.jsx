@@ -1,17 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { Box, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
 import { getMessagesByConversationId, getListMemberByConversationId } from '~/apis'
 import { useUser } from './context/UserContext'
-import { useStomp } from '~/hooks/useStomp'
+import { useStomp } from '~/components/context/StompContext'
 import moment from 'moment'
-import { useChatStore } from './store/useChatStore'
+import { useChatStore } from '~/store/useChatStore'
 
 function ChatWindow({ conversation }) {
   const { user } = useUser();
-  const { messages, setMessages, addMessage } = useChatStore();
+  const { setMessages, addMessage } = useChatStore();
 
   const handleMessageReceived = useCallback((message) => {
     const isSystemMessage = message?.messageType === 'SYSTEM';
@@ -27,16 +27,14 @@ function ChatWindow({ conversation }) {
       attachments: message?.attachments || [],
       messageType: message?.messageType,
       action: message?.action
-    })
+    });
 
     if (isSystemMessage && shouldRefreshMembers && conversation?.conversationId) {
       getListMemberByConversationId(conversation.conversationId).then(result => {
-        if (result) {
-          useChatStore.getState().setMembers(result.data);
-        }
+        if (result) useChatStore.getState().setMembers(result.data);
       });
     }
-  }, [user?.id, conversation?.conversationId])
+  }, [user?.id, conversation?.conversationId]);
 
   const { connected, subscribeRoom, unsubscribeRoom, sendMessage } = useStomp();
 
@@ -44,24 +42,17 @@ function ChatWindow({ conversation }) {
     if (conversation && connected) {
       subscribeRoom(conversation?.conversationId, handleMessageReceived);
     }
-
     return () => {
-      if (conversation?.conversationId) {
-        unsubscribeRoom(conversation.conversationId);
-      }
+      if (conversation?.conversationId) unsubscribeRoom(conversation.conversationId);
     };
   }, [conversation?.conversationId, connected, subscribeRoom, unsubscribeRoom, handleMessageReceived]);
 
   useEffect(() => {
     if (conversation) {
       const getMessages = async () => {
-        const result = await getMessagesByConversationId({
-          cursor: null,
-          conversationId: conversation.conversationId
-        });
+        const result = await getMessagesByConversationId({ cursor: null, conversationId: conversation.conversationId });
         if (result) {
-          const messages = result.data.messages;
-          const messageContent = messages.map((message) => {
+          const messageContent = result.data.messages.map((message) => {
             const isSystemMessage = message?.messageType === 'SYSTEM';
             return {
               content: message?.content,
@@ -90,40 +81,46 @@ function ChatWindow({ conversation }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#ffffff',
+        background: 'linear-gradient(160deg, #FFFFFF 0%, #F3F5FF 100%)',
       }}>
         <Box sx={{
+          background: 'linear-gradient(160deg, #FFFFFF 0%, #F3F5FF 100%)',
+          borderRadius: '28px',
+          padding: '40px 48px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          maxWidth: 400,
-          p: 3
+          maxWidth: 380,
         }}>
-          {/* Chat Icon Appears 3D via drop-shadow */}
           <Box sx={{
             fontSize: '5rem',
-            mb: 2,
+            mb: 2.5,
             lineHeight: 1,
-            filter: 'drop-shadow(0px 10px 10px rgba(0,0,0,0.1))'
+            filter: 'drop-shadow(0px 12px 16px rgba(91,103,255,0.25))'
           }}>
             💬
           </Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#0f172a', mb: 1.5 }}>
-            Welcome to Chat
+          <Typography sx={{ fontWeight: 700, fontSize: '28px', color: '#111827', mb: 1.5, letterSpacing: '-0.5px' }}>
+            Chào mừng bạn!
           </Typography>
-          <Typography variant="body1" sx={{ color: '#64748b', mb: 4, lineHeight: 1.6 }}>
-            Select a conversation from the sidebar to start messaging with your contacts
+          <Typography sx={{ fontSize: '15px', color: '#6B7280', mb: 3.5, lineHeight: 1.6 }}>
+            Kết nối và trò chuyện cùng mọi người ngay bây giờ.
           </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#64748b' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#00ba61' }} />
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>Online</Typography>
-            </Box>
-            <Typography variant="body2" sx={{ color: '#9ca3af' }}>•</Typography>
-            <Typography variant="body2">3 contacts available</Typography>
-            {/* <Typography variant="body2">{conversations.filter(c => c.isOnline).length} contacts available</Typography> */}
+          <Box sx={{
+            width: '100%',
+            py: 1.5,
+            borderRadius: '999px',
+            background: 'linear-gradient(135deg, #6EA8FE 0%, #5B67FF 50%, #7C5CFF 100%)',
+            color: '#FFFFFF',
+            fontWeight: 600,
+            fontSize: '15px',
+            textAlign: 'center',
+            cursor: 'default',
+            boxShadow: '0 8px 20px rgba(91,103,255,0.3)',
+          }}>
+            Chọn cuộc trò chuyện để bắt đầu
           </Box>
         </Box>
       </Box>
@@ -133,20 +130,30 @@ function ChatWindow({ conversation }) {
   return (
     <Box sx={{
       height: '100%',
-      width: '100%',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      bgcolor: '#f8f9fa',
+      bgcolor: '#FFFFFF',
     }}>
-      <Box sx={{ width: '100%', bgcolor: 'white' }}>
+      <Box sx={{ flexShrink: 0 }}>
         <HeaderChat conversation={conversation} />
       </Box>
-      <Box sx={{ flexGrow: 1, height: 0, width: '100%', overflowY: 'auto', py: 2 }}>
+      <Box sx={{
+        flexGrow: 1,
+        height: 0,
+        overflowY: 'auto',
+        py: 2,
+        px: 1,
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FF 100%)',
+      }}>
         <MessageItem />
       </Box>
-      <Box sx={{ width: '100%', bgcolor: 'white' }}>
+      <Box sx={{
+        flexShrink: 0,
+        bgcolor: '#FFFFFF',
+        borderTop: '1px solid #EEF2FF',
+        px: 2,
+        py: 1.5,
+      }}>
         <MessageInput conversation={conversation} sendMessage={sendMessage} />
       </Box>
     </Box>
