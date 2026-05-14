@@ -54,7 +54,6 @@ export const useFriendStore = create((set, get) => ({
   },
 
   handleRealtimeNotification: (notification) => {
-    console.log(notification);
     if (!notification) return;
     const { type, friendRequest } = notification;
 

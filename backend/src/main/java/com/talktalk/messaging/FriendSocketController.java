@@ -14,6 +14,7 @@ import com.talktalk.dto.response.FriendResponse;
 import com.talktalk.service.FriendRequestService;
 import com.talktalk.service.FriendService;
 import com.talktalk.service.UserService;
+import com.talktalk.utils.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,11 @@ public class FriendSocketController {
     FriendRequestService friendRequestService;
     FriendService friendService;
     UserService userService;
+    Utils utils;
 
     @MessageMapping("/friend.sendRequest")
     public void sendFriendRequest(@Payload SendFriendRequestRequest request, Principal principal) {
-        Long senderId = getUserIdFromPrincipal(principal);
+        Long senderId = utils.getUserIdFromPrincipal(principal);
         FriendRequestResponse response = friendRequestService.sendFriendRequest(senderId, request);
         log.info("Friend request sent successfully: {}", response);
         String receiverEmail = userService.getById(request.getReceiverId()).getEmail();
@@ -42,7 +44,7 @@ public class FriendSocketController {
 
     @MessageMapping("/friend.acceptRequest")
     public void acceptFriendRequest(@Payload Long requestId, Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
+        Long userId = utils.getUserIdFromPrincipal(principal);
         FriendRequestResponse response = friendRequestService.acceptFriendRequest(requestId, userId);
 
         String senderEmail = userService.getById(response.getSenderId()).getEmail();
@@ -52,7 +54,7 @@ public class FriendSocketController {
 
     @MessageMapping("/friend.rejectRequest")
     public void rejectFriendRequest(@Payload Long requestId, Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
+        Long userId = utils.getUserIdFromPrincipal(principal);
         FriendRequestResponse response = friendRequestService.rejectFriendRequest(requestId, userId);
 
         String senderEmail = userService.getById(response.getSenderId()).getEmail();
@@ -61,7 +63,7 @@ public class FriendSocketController {
 
     @MessageMapping("/friend.cancelRequest")
     public void cancelFriendRequest(@Payload Long requestId, Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
+        Long userId = utils.getUserIdFromPrincipal(principal);
         FriendRequestResponse response = friendRequestService.cancelFriendRequest(requestId, userId);
 
         String receiverEmail = userService.getById(response.getReceiverId()).getEmail();
@@ -70,7 +72,7 @@ public class FriendSocketController {
 
     @MessageMapping("/friend.unfriend")
     public void unfriend(@Payload Long friendUserId, Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
+        Long userId = utils.getUserIdFromPrincipal(principal);
         friendService.unfriend(userId, friendUserId);
         sendFriendNotification(principal.getName(), "UNFRIENDED_BY_ME", null, null);
     }
@@ -87,8 +89,4 @@ public class FriendSocketController {
         messagingTemplate.convertAndSendToUser(userEmail, "/queue/friends", notification);
     }
 
-    private Long getUserIdFromPrincipal(Principal principal) {
-        String email = principal.getName();
-        return userService.findByEmailForSocket(email).getId();
-    }
 }

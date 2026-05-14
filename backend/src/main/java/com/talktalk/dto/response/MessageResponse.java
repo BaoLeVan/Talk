@@ -20,6 +20,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MessageResponse {
+    String idMessage;
     Long conversationId;
     UserResponse user;
     String content;

@@ -1,5 +1,7 @@
 package com.talktalk.messaging;
 
+import java.security.Principal;
+
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -7,11 +9,14 @@ import org.springframework.stereotype.Controller;
 
 import com.talktalk.dto.request.ChatMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
+import com.talktalk.dto.request.ReadReceiptRequest;
 import com.talktalk.dto.response.MessageResponse;
+import com.talktalk.dto.response.ReadReceiptResponse;
 import com.talktalk.dto.response.RoleUserInConversation;
 import com.talktalk.exception.enums.MemberRole;
 import com.talktalk.service.ConversationsMemberService;
 import com.talktalk.service.MessagesService;
+import com.talktalk.utils.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +32,7 @@ public class MessageMessagingController {
     SimpMessagingTemplate messagingTemplate;
     MessagesService messagesService;
     ConversationsMemberService conversationsMemberService;
+    Utils utils;
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload ChatMessageRequest request) {
@@ -67,5 +73,19 @@ public class MessageMessagingController {
         MessageResponse messageResponse = messagesService.createLeaveMessage(request);
         conversationsMemberService.leaveGroup(request.getConversationId(), request.getUserId());
         messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), messageResponse);
+    }
+
+    @MessageMapping("/chat.markRead")
+    public void markRead(@Payload ReadReceiptRequest request, Principal principal) {
+        Long userId = utils.getUserIdFromPrincipal(principal);
+        log.info("Mark read conversation: {}, user: {}, lastMsg: {}", request.getConversationId(), userId,
+                request.getLastReadMessageId());
+        messagesService.markRead(request.getConversationId(), request.getLastReadMessageId(), userId);
+        ReadReceiptResponse receipt = ReadReceiptResponse.builder()
+                .conversationId(request.getConversationId())
+                .userId(userId)
+                .lastReadMessageId(request.getLastReadMessageId())
+                .build();
+        messagingTemplate.convertAndSend("/topic/room." + request.getConversationId() + ".read", receipt);
     }
 }

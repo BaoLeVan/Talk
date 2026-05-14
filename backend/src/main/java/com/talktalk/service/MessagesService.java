@@ -17,4 +17,6 @@ public interface MessagesService {
     MessageResponse createLeaveMessage(HandleSocketRequest request);
 
     MessageResponse createAddMemberMessage(HandleSocketRequest request);
+
+    void markRead(Long conversationId, String lastReadMessageId, Long userId);
 }

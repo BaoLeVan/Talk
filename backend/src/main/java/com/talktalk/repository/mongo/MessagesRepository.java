@@ -18,4 +18,5 @@ public interface MessagesRepository extends MongoRepository<Message, String> {
             Long conversationId,
             LocalDateTime createdAt,
             Pageable pageable);
+
 }

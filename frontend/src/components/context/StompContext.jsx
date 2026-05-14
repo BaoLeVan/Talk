@@ -95,6 +95,32 @@ export default function StompProvider({ children }) {
         subscriptions.current[topic] = sub;
     }, [connected]);
 
+    const subscribeReadReceipts = useCallback((conversationId, callback) => {
+        if (!stompClient.current || !connected) return;
+
+        const topic = `/topic/room.${conversationId}.read`;
+        if (subscriptions.current[topic]) return;
+
+        const sub = stompClient.current.subscribe(topic, (message) => {
+            try {
+                const parsed = JSON.parse(message.body);
+                callback(parsed);
+            } catch (e) {
+                console.error('Parse error:', e);
+            }
+        });
+
+        subscriptions.current[topic] = sub;
+    }, [connected]);
+
+    const unsubscribeReadReceipts = useCallback((conversationId) => {
+        const topic = `/topic/room.${conversationId}.read`;
+        if (subscriptions.current[topic]) {
+            subscriptions.current[topic].unsubscribe();
+            delete subscriptions.current[topic];
+        }
+    }, []);
+
     const unsubscribeRoom = useCallback((conversationId) => {
         const topic = `/topic/room.${conversationId}`;
         if (subscriptions.current[topic]) {
@@ -131,7 +157,7 @@ export default function StompProvider({ children }) {
     }, [connected]);
 
     return (
-        <StompContext.Provider value={{ connected, sendMessage, subscribeRoom, unsubscribeRoom, subscribe, unsubscribe, reconnect }}>
+        <StompContext.Provider value={{ connected, sendMessage, subscribeRoom, unsubscribeRoom, subscribeReadReceipts, unsubscribeReadReceipts, subscribe, unsubscribe, reconnect }}>
             {children}
         </StompContext.Provider>
     );

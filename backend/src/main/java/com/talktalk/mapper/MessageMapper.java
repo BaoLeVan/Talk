@@ -17,5 +17,6 @@ public interface MessageMapper {
     @Mapping(target = "createdAt", source = "message.createdAt")
     @Mapping(target = "updatedAt", source = "message.updatedAt")
     @Mapping(target = "deletedAt", source = "message.deletedAt")
+    @Mapping(target = "idMessage", source = "message.id")
     MessageResponse toMessageResponse(Message message, User user);
 }

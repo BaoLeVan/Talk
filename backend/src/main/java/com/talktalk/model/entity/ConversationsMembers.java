@@ -36,12 +36,16 @@ public class ConversationsMembers extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cvs_mem_id")
     Long id;
+
     @Enumerated(EnumType.STRING)
     MemberRole role;
+
     @Column(name = "last_read_msg_id")
-    Long lastReadMessageId;
+    String lastReadMessageId;
+
     @Column(name = "joined_at")
     LocalDateTime joinedAt;
+    
     @Column(name = "left_at")
     LocalDateTime leftAt;
 
