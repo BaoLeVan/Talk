@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Box, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
@@ -11,47 +11,27 @@ import { useChatStore } from '~/store/useChatStore'
 
 function ChatWindow({ conversation }) {
   const { user } = useUser();
-  const { setMessages, addMessage } = useChatStore();
-
-  const handleMessageReceived = useCallback((message) => {
-    const isSystemMessage = message?.messageType === 'SYSTEM';
-    const shouldRefreshMembers = ['REMOVE_MEMBER', 'LEAVE', 'JOIN', 'ADD_MEMBER'].includes(message?.action);
-
-    addMessage({
-      content: message?.content,
-      time: moment(message?.updatedAt || message?.createdAt || message?.timestamp).format('dddd h:mm A'),
-      isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
-      senderName: isSystemMessage ? null : message?.user?.userName,
-      avatar: isSystemMessage ? null : message?.user?.avatar,
-      status: message?.status,
-      attachments: message?.attachments || [],
-      messageType: message?.messageType,
-      action: message?.action
-    });
-
-    if (isSystemMessage && shouldRefreshMembers && conversation?.conversationId) {
-      getListMemberByConversationId(conversation.conversationId).then(result => {
-        if (result) useChatStore.getState().setMembers(result.data);
-      });
-    }
-  }, [user?.id, conversation?.conversationId]);
-
-  const { connected, subscribeRoom, unsubscribeRoom, sendMessage } = useStomp();
+  const { setMessages, markConversationRead, setCurrentConversationId } = useChatStore();
+  const { sendMessage } = useStomp();
 
   useEffect(() => {
-    if (conversation && connected) {
-      subscribeRoom(conversation?.conversationId, handleMessageReceived);
-    }
-    return () => {
-      if (conversation?.conversationId) unsubscribeRoom(conversation.conversationId);
-    };
-  }, [conversation?.conversationId, connected, subscribeRoom, unsubscribeRoom, handleMessageReceived]);
+    setCurrentConversationId(conversation?.conversationId ?? null);
+    return () => setCurrentConversationId(null);
+  }, [conversation?.conversationId, setCurrentConversationId]);
 
   useEffect(() => {
     if (conversation) {
       const getMessages = async () => {
         const result = await getMessagesByConversationId({ cursor: null, conversationId: conversation.conversationId });
-        if (result) {
+        if (result && result.data.messages.length > 0) {
+          const lastMessageId = result.data.messages[result.data.messages.length - 1].idMessage;
+
+          sendMessage('/app/chat.markRead', {
+            conversationId: conversation.conversationId,
+            lastReadMessageId: lastMessageId,
+          });
+          markConversationRead(conversation.conversationId);
+
           const messageContent = result.data.messages.map((message) => {
             const isSystemMessage = message?.messageType === 'SYSTEM';
             return {
@@ -60,7 +40,7 @@ function ChatWindow({ conversation }) {
               isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
               senderName: isSystemMessage ? null : message?.user?.userName,
               avatar: isSystemMessage ? null : message?.user?.avatar,
-              status: message?.status,
+              status: message?.status?.toLowerCase(),
               attachments: message?.attachments || [],
               messageType: message?.messageType,
               action: message?.action

@@ -18,7 +18,6 @@ export default function FriendsList() {
     setSelectedUser(null);
   };
 
-
   useEffect(() => {
     fetchFriends();
   }, [fetchFriends]);

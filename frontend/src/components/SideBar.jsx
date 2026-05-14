@@ -55,6 +55,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
   const handleListItemClick = (event, index) => {
     onSelectConversation(index);
     const result = conversations.find((data) => data.conversationId === index);
+    console.log(result);
     setConversation(result);
   };
 
@@ -163,7 +164,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
             </Box>
           ) : conversations?.map((conversation) => {
             const isSelected = selectedIndex === conversation.conversationId;
-            const hasUnread = conversation.unreadCount > 0;
+            const hasUnread = conversation.countMessageUnread > 0;
             const displayName = conversation.conversationType === TYPE.GROUP
               ? conversation.conversationTitle
               : conversation.userName;
@@ -233,20 +234,20 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                       whiteSpace: 'nowrap',
                       maxWidth: '80%'
                     }}>
-                      {conversation.userID === user?.id
+                      {conversation.userId === user?.id
                         ? `Bạn: ${conversation.conversationLastMessage}`
                         : conversation.conversationLastMessage}
                     </Typography>
                     {hasUnread && (
                       <Badge
-                        badgeContent={conversation.unreadCount}
+                        badgeContent={conversation.countMessageUnread}
                         sx={{
                           '& .MuiBadge-badge': {
                             fontSize: '11px',
                             height: '20px',
                             minWidth: '20px',
                             fontWeight: 700,
-                            bgcolor: COLORS.unreadBadge,
+                            bgcolor: COLORS.primary,
                             color: COLORS.white,
                             borderRadius: '999px',
                           }

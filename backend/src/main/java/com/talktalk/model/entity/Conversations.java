@@ -39,6 +39,8 @@ public class Conversations extends BaseEntity {
     String title;
     @Column(name = "cvs_type")
     TypeConversation type;
+    @Column(name = "cvs_last_sender_id")
+    Long lastSenderId;
     @Column(name = "last_message")
     String lastMessage;
     @Column(name = "last_message_at")

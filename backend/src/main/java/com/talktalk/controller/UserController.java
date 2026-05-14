@@ -3,8 +3,6 @@ package com.talktalk.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.talktalk.dto.response.ApiResponse;
 import com.talktalk.dto.response.UserResponse;
 import com.talktalk.service.UserService;
+import com.talktalk.utils.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 
     UserService userService;
+    Utils utils;
 
     @GetMapping
     public ApiResponse<UserResponse> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserResponse user = userService.findByEmail(email);
+        UserResponse user = utils.getCurrentUser();
         log.info("User: {}", user);
         return ApiResponse.<UserResponse>builder()
                 .code(HttpStatus.OK.value())
@@ -43,9 +41,7 @@ public class UserController {
 
     @GetMapping("/search")
     public ApiResponse<List<UserResponse>> searchUsers(@RequestParam String keyword) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserResponse currentUser = userService.findByEmail(email);
+        UserResponse currentUser = utils.getCurrentUser();
         List<UserResponse> users = userService.searchUsers(keyword, currentUser.getId());
         return ApiResponse.<List<UserResponse>>builder()
                 .code(HttpStatus.OK.value())

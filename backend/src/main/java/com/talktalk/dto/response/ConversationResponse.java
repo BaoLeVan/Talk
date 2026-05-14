@@ -23,8 +23,25 @@ public class ConversationResponse {
     TypeConversation conversationType;
     String conversationLastMessage;
     LocalDateTime conversationLastMessageAt;
+    String conversationLastReadMessageId;
+    Long countMessageUnread;
 
     Long userId;
     String userName;
     String userAvatar;
+
+    public ConversationResponse(Long conversationId, String conversationAvatar, String conversationTitle,
+            TypeConversation conversationType, String conversationLastMessage, LocalDateTime conversationLastMessageAt,
+            String conversationLastReadMessageId, Long userId, String userName, String userAvatar) {
+        this.conversationId = conversationId;
+        this.conversationAvatar = conversationAvatar;
+        this.conversationTitle = conversationTitle;
+        this.conversationType = conversationType;
+        this.conversationLastMessage = conversationLastMessage;
+        this.conversationLastMessageAt = conversationLastMessageAt;
+        this.conversationLastReadMessageId = conversationLastReadMessageId;
+        this.userId = userId;
+        this.userName = userName;
+        this.userAvatar = userAvatar;
+    }
 }

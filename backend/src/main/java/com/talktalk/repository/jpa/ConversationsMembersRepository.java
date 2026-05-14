@@ -43,4 +43,10 @@ public interface ConversationsMembersRepository extends JpaRepository<Conversati
         @Query("UPDATE ConversationsMembers cm SET cm.leftAt = NULL, cm.joinedAt = CURRENT_TIMESTAMP WHERE cm.conversations.id = :conversationId AND cm.user.id = :userAddId")
         void updateMemberJoinedAtInGroup(@Param("conversationId") Long conversationId,
                         @Param("userAddId") Long userAddId);
+
+        @Modifying
+        @Transactional
+        @Query("UPDATE ConversationsMembers cm SET cm.lastReadMessageId = :lastReadMessageId WHERE cm.conversations.id = :conversationId AND cm.user.id = :userId")
+        void updateUnread(@Param("conversationId") Long conversationId,
+                        @Param("userId") Long userId, @Param("lastReadMessageId") String lastReadMessageId);
 }

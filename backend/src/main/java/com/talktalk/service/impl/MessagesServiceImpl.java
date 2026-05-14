@@ -136,6 +136,7 @@ public class MessagesServiceImpl implements MessagesService {
                 }
 
                 List<Attachment> attachments = Collections.emptyList();
+
                 if (cmd.getAttachments() != null && !cmd.getAttachments().isEmpty()) {
                         attachments = attachmentRepository.saveAll(cmd.getAttachments());
                 }
@@ -157,7 +158,7 @@ public class MessagesServiceImpl implements MessagesService {
                 message.setUpdatedAt(now);
 
                 Message saved = messagesRepository.save(message);
-
+                markRead(cmd.getConversationId(), saved.getId(), cmd.getSenderId());
                 conversation.setLastMessage(cmd.getContent());
                 conversation.setLastMessageAt(now);
                 conversationsRepository.save(conversation);
@@ -175,11 +176,9 @@ public class MessagesServiceImpl implements MessagesService {
                 List<Message> messages;
 
                 if (cursor == null) {
-                        // Lần đầu mở chat
                         messages = messagesRepository
                                         .findByConversationIdOrderByCreatedAtDesc(conversationId, pageable);
                 } else {
-                        // Scroll lên → lấy tin cũ hơn
                         messages = messagesRepository
                                         .findByConversationIdAndCreatedAtBeforeOrderByCreatedAtDesc(
                                                         conversationId,
@@ -212,5 +211,10 @@ public class MessagesServiceImpl implements MessagesService {
                                 .nextCursor(nextCursor)
                                 .hasNext(messages.size() == validSize)
                                 .build();
+        }
+
+        @Override
+        public void markRead(Long conversationId, String lastReadMessageId, Long userId) {
+                conversationsMembersRepository.updateUnread(conversationId, userId, lastReadMessageId);
         }
 }

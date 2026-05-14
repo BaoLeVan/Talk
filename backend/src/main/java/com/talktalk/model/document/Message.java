@@ -18,6 +18,8 @@ import com.talktalk.exception.enums.MessageStatus;
 import com.talktalk.exception.enums.MessageType;
 import com.talktalk.model.entity.BaseEntity;
 
+import jakarta.persistence.Id;
+
 @Document(collection = "messages")
 @Getter
 @Setter
@@ -26,6 +28,8 @@ import com.talktalk.model.entity.BaseEntity;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Message extends BaseEntity {
+    @Id
+    String id;
     Long conversationId;
     Long senderId;
     String content;

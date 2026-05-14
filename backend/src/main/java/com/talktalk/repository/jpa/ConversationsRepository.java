@@ -15,7 +15,7 @@ import com.talktalk.model.entity.Conversations;
 @Repository
 public interface ConversationsRepository extends JpaRepository<Conversations, Long> {
 
-    @Query("SELECT new com.talktalk.dto.response.ConversationResponse(c.id, c.avatar, c.title, c.type, c.lastMessage, c.lastMessageAt, cm2.user.id, u.userName, u.avatar) " +
+    @Query("SELECT new com.talktalk.dto.response.ConversationResponse(c.id, c.avatar, c.title, c.type, c.lastMessage, c.lastMessageAt, cm.lastReadMessageId, cm2.user.id, u.userName, u.avatar) " +
             "FROM ConversationsMembers cm " +
             "JOIN cm.conversations c " +
             "JOIN ConversationsMembers cm2 ON cm2.conversations.id = c.id " +
