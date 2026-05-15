@@ -164,7 +164,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
             </Box>
           ) : conversations?.map((conversation) => {
             const isSelected = selectedIndex === conversation.conversationId;
-            const hasUnread = conversation.countMessageUnread > 0;
+            const hasUnread = conversation.conversationUnreadCount > 0;
             const displayName = conversation.conversationType === TYPE.GROUP
               ? conversation.conversationTitle
               : conversation.userName;
@@ -234,13 +234,13 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
                       whiteSpace: 'nowrap',
                       maxWidth: '80%'
                     }}>
-                      {conversation.userId === user?.id
+                      {conversation.conversationLastSenderId === user?.id
                         ? `Bạn: ${conversation.conversationLastMessage}`
-                        : conversation.conversationLastMessage}
+                        : conversation.conversationLastSenderName + ': ' + conversation.conversationLastMessage}
                     </Typography>
                     {hasUnread && (
                       <Badge
-                        badgeContent={conversation.countMessageUnread}
+                        badgeContent={conversation.conversationUnreadCount}
                         sx={{
                           '& .MuiBadge-badge': {
                             fontSize: '11px',

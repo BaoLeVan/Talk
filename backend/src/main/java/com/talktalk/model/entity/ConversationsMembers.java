@@ -40,6 +40,9 @@ public class ConversationsMembers extends BaseEntity {
     @Enumerated(EnumType.STRING)
     MemberRole role;
 
+    @Column(name = "unread_count", columnDefinition = "bigint default 0", nullable = false)
+    Long unreadCount;
+
     @Column(name = "last_read_msg_id")
     String lastReadMessageId;
 

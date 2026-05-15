@@ -1,4 +1,4 @@
-package com.talktalk.service.redis.impl;
+package com.talktalk.service.redis.service.impl;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import com.talktalk.service.redis.OtpRedisService;
+import com.talktalk.service.redis.service.OtpRedisService;
 
 @Service
 public class OtpRedisServiceImpl implements OtpRedisService {

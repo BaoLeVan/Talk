@@ -33,6 +33,7 @@ import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.repository.mongo.AttachmentRepository;
 import com.talktalk.repository.mongo.MessagesRepository;
 import com.talktalk.service.MessagesService;
+import com.talktalk.service.redis.service.StatusUserInConvRedisService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class MessagesServiceImpl implements MessagesService {
         ConversationsRepository conversationsRepository;
         ConversationsMembersRepository conversationsMembersRepository;
         AttachmentRepository attachmentRepository;
+        StatusUserInConvRedisService statusUserInConvRedisService;
 
         @Override
         public MessageResponse createMessage(ChatMessageRequest request) {
@@ -63,6 +65,7 @@ public class MessagesServiceImpl implements MessagesService {
 
                 User user = userRepository.findById(request.getSenderId())
                                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                handleUnreadCountForUser(saved.getConversationId(), saved.getSenderId());
 
                 return messageMapper.toMessageResponse(saved, user);
         }
@@ -158,12 +161,22 @@ public class MessagesServiceImpl implements MessagesService {
                 message.setUpdatedAt(now);
 
                 Message saved = messagesRepository.save(message);
-                markRead(cmd.getConversationId(), saved.getId(), cmd.getSenderId());
+
+                conversation.setLastSenderId(cmd.getSenderId());
                 conversation.setLastMessage(cmd.getContent());
                 conversation.setLastMessageAt(now);
                 conversationsRepository.save(conversation);
 
                 return saved;
+        }
+
+        public void handleUnreadCountForUser(Long conversationsId, Long senderId) {
+                List<Long> memberIds = conversationsMembersRepository.findUserIdsByConversationId(conversationsId);
+                Set<Long> activeMemberIds = statusUserInConvRedisService.getMemberUserInConv(conversationsId);
+                List<Long> membersToIncrement = memberIds.stream()
+                                .filter(id -> !activeMemberIds.contains(id) && !id.equals(senderId))
+                                .collect(Collectors.toList());
+                conversationsMembersRepository.incrementUnreadCount(conversationsId, membersToIncrement);
         }
 
         @Override
@@ -215,6 +228,8 @@ public class MessagesServiceImpl implements MessagesService {
 
         @Override
         public void markRead(Long conversationId, String lastReadMessageId, Long userId) {
-                conversationsMembersRepository.updateUnread(conversationId, userId, lastReadMessageId);
+                statusUserInConvRedisService.setMemberInConv(conversationId, userId);
+                statusUserInConvRedisService.setUserActiveInConv(userId, conversationId);
+                conversationsMembersRepository.updateLastReadMessageIdAndCountUnread(conversationId, userId, lastReadMessageId);
         }
 }

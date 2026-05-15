@@ -25,7 +25,7 @@ export const useChatStore = create((set) => ({
     markConversationRead: (conversationId) =>
         set(state => ({
             conversations: state.conversations.map(c =>
-                c.conversationId === conversationId ? { ...c, countMessageUnread: 0 } : c
+                c.conversationId === conversationId ? { ...c, conversationUnreadCount: 0 } : c
             )
         })),
 
@@ -34,6 +34,8 @@ export const useChatStore = create((set) => ({
             conversations: state.conversations.map(conv => {
                 if (conv.conversationId !== conversationId) return conv;
                 const updated = { ...conv };
+                updated.conversationLastSenderId = newMessage.user.id;
+                updated.conversationLastSenderName = newMessage.user.userName;
                 updated.conversationLastMessage = newMessage.content;
                 updated.conversationLastMessageAt = newMessage.createdAt || newMessage.timestamp;
                 if (
@@ -41,7 +43,7 @@ export const useChatStore = create((set) => ({
                     newMessage.senderId !== currentUserId &&
                     newMessage.messageType !== 'SYSTEM'
                 ) {
-                    updated.countMessageUnread = (updated.countMessageUnread || 0) + 1;
+                    updated.conversationUnreadCount = (updated.conversationUnreadCount || 0) + 1;
                 }
                 return updated;
             })

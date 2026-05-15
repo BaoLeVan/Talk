@@ -37,7 +37,7 @@ import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.service.AuthService;
 import com.talktalk.service.SenderService;
 import com.talktalk.service.UserService;
-import com.talktalk.service.redis.OtpRedisService;
+import com.talktalk.service.redis.service.OtpRedisService;
 
 import jakarta.mail.MessagingException;
 import lombok.AccessLevel;

@@ -1,4 +1,4 @@
-package com.talktalk.service.redis;
+package com.talktalk.service.redis.service;
 
 public interface OtpRedisService {
 

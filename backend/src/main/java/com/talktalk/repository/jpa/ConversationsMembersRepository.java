@@ -46,7 +46,15 @@ public interface ConversationsMembersRepository extends JpaRepository<Conversati
 
         @Modifying
         @Transactional
-        @Query("UPDATE ConversationsMembers cm SET cm.lastReadMessageId = :lastReadMessageId WHERE cm.conversations.id = :conversationId AND cm.user.id = :userId")
-        void updateUnread(@Param("conversationId") Long conversationId,
+        @Query("UPDATE ConversationsMembers cm SET cm.lastReadMessageId = :lastReadMessageId, cm.unreadCount = 0 WHERE cm.conversations.id = :conversationId AND cm.user.id = :userId")
+        void updateLastReadMessageIdAndCountUnread(@Param("conversationId") Long conversationId,
                         @Param("userId") Long userId, @Param("lastReadMessageId") String lastReadMessageId);
+
+        @Query("SELECT cm.user.id FROM ConversationsMembers cm WHERE cm.conversations.id = :conversationId")
+        List<Long> findUserIdsByConversationId(@Param("conversationId") Long conversationId);
+
+        @Modifying
+        @Transactional
+        @Query("UPDATE ConversationsMembers cm SET cm.unreadCount = cm.unreadCount + 1 WHERE cm.conversations.id = :conversationId AND cm.user.id IN :userIds")
+        void incrementUnreadCount(@Param("conversationId") Long conversationId, @Param("userIds") List<Long> userIds);
 }
