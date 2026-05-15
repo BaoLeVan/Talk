@@ -21,25 +21,30 @@ public class ConversationResponse {
     String conversationAvatar;
     String conversationTitle;
     TypeConversation conversationType;
+    Long conversationLastSenderId;
+    String conversationLastSenderName;
     String conversationLastMessage;
     LocalDateTime conversationLastMessageAt;
     String conversationLastReadMessageId;
-    Long countMessageUnread;
+    Long conversationUnreadCount;
 
     Long userId;
     String userName;
     String userAvatar;
 
     public ConversationResponse(Long conversationId, String conversationAvatar, String conversationTitle,
-            TypeConversation conversationType, String conversationLastMessage, LocalDateTime conversationLastMessageAt,
-            String conversationLastReadMessageId, Long userId, String userName, String userAvatar) {
+            TypeConversation conversationType, Long conversationLastSenderId, String conversationLastMessage,
+            LocalDateTime conversationLastMessageAt,
+            String conversationLastReadMessageId, Long conversationUnreadCount, Long userId, String userName, String userAvatar) {
         this.conversationId = conversationId;
         this.conversationAvatar = conversationAvatar;
         this.conversationTitle = conversationTitle;
         this.conversationType = conversationType;
+        this.conversationLastSenderId = conversationLastSenderId;
         this.conversationLastMessage = conversationLastMessage;
         this.conversationLastMessageAt = conversationLastMessageAt;
         this.conversationLastReadMessageId = conversationLastReadMessageId;
+        this.conversationUnreadCount = conversationUnreadCount;
         this.userId = userId;
         this.userName = userName;
         this.userAvatar = userAvatar;
