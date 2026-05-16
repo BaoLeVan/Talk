@@ -4,7 +4,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useState } from "react";
 import { RemoveCircleOutline } from "@mui/icons-material";
-import DialogConfirm from "./Form/DialogConfirm";
+import DialogConfirm from "../Form/DialogConfirm";
 
 export default function ProfileModal({ open, onClose, user, showAddFriendButton = false, showRemoveFriendButton = false, onSendFriendRequest, onRemoveFriendRequest }) {
   const [sending, setSending] = useState(false);

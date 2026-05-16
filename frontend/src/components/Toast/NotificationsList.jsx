@@ -3,6 +3,7 @@ import { useStomp } from "~/components/context/StompContext";
 import { useFriendStore } from "~/store/useFriendStore";
 import { useState, useEffect } from "react";
 import { Notifications } from "@mui/icons-material";
+import { COLORS } from "~/utils/common";
 
 export default function FriendRequestsReceived() {
   const { receivedRequests, acceptRequest, rejectRequest, loading, fetchReceivedRequests } = useFriendStore();
@@ -44,7 +45,9 @@ export default function FriendRequestsReceived() {
         aria-controls={open ? 'notification-drop-down' : undefined}
         aria-haspopup="true"
         aria-expanded={open}
-        onClick={handleClick}>
+        onClick={handleClick}
+        sx={{ borderRadius: '12px', color: COLORS.textSecondary, '&:hover': { bgcolor: COLORS.primaryHover, color: COLORS.primary } }}
+      >
         <Badge color="secondary" badgeContent={receivedRequests.length}>
           <Notifications fontSize='inherit' />
         </Badge>

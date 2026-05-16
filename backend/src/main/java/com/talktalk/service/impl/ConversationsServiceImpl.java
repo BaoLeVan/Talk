@@ -1,5 +1,6 @@
 package com.talktalk.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,13 +19,22 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import com.talktalk.dto.request.CreateGroupConversationRequest;
 import com.talktalk.dto.response.ConversationResponse;
 import com.talktalk.dto.response.MembersResponse;
+import com.talktalk.exception.AppException;
+import com.talktalk.exception.ErrorCode;
+import com.talktalk.exception.enums.MemberRole;
+import com.talktalk.exception.enums.TypeConversation;
 import com.talktalk.model.document.Message;
+import com.talktalk.model.entity.Conversations;
+import com.talktalk.model.entity.ConversationsMembers;
 import com.talktalk.model.entity.User;
+import com.talktalk.repository.jpa.ConversationsMembersRepository;
 import com.talktalk.repository.jpa.ConversationsRepository;
 import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.service.ConversationsService;
+import com.talktalk.service.UserService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +46,10 @@ import lombok.experimental.FieldDefaults;
 public class ConversationsServiceImpl implements ConversationsService {
 
     ConversationsRepository conversationsRepository;
+    ConversationsMembersRepository conversationsMembersRepository;
     MongoTemplate mongoTemplate;
     UserRepository userRepository;
+    UserService userService;
 
     @Override
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
@@ -55,6 +67,82 @@ public class ConversationsServiceImpl implements ConversationsService {
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public List<MembersResponse> getListMemberByConversationId(Long conversationId) {
         return conversationsRepository.getListMemberByConversationId(conversationId);
+    }
+
+    @Override
+    public ConversationResponse createGroupConversation(Long currentUserId, CreateGroupConversationRequest request) {
+        if (request == null || request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+
+        List<Long> requestedMemberIds = request.getMemberIds() == null ? List.of() : request.getMemberIds().stream()
+                .filter(Objects::nonNull)
+                .filter(id -> !id.equals(currentUserId))
+                .distinct()
+                .toList();
+
+        if (requestedMemberIds.isEmpty()) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+
+        List<User> members = userRepository.findAllById(requestedMemberIds);
+        if (members.size() != requestedMemberIds.size()) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        Conversations conversation = Conversations.builder()
+                .title(request.getTitle().trim())
+                .type(TypeConversation.GROUP)
+                .avatar(null)
+                .lastMessage(null)
+                .lastSenderId(null)
+                .lastMessageAt(LocalDateTime.now())
+                .deletedAt(null)
+                .build();
+        conversation = conversationsRepository.save(conversation);
+        final Conversations savedConversation = conversation;
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        conversationsMembersRepository.save(ConversationsMembers.builder()
+                .conversations(savedConversation)
+                .user(currentUser)
+                .role(MemberRole.ADMIN)
+                .unreadCount(0L)
+                .lastReadMessageId(null)
+                .joinedAt(LocalDateTime.now())
+                .leftAt(null)
+                .build());
+
+        List<ConversationsMembers> membersToSave = members.stream()
+                .map(member -> ConversationsMembers.builder()
+                        .conversations(savedConversation)
+                        .user(member)
+                        .role(MemberRole.MEMBER)
+                        .unreadCount(0L)
+                        .lastReadMessageId(null)
+                        .joinedAt(LocalDateTime.now())
+                        .leftAt(null)
+                        .build())
+                .toList();
+        conversationsMembersRepository.saveAll(membersToSave);
+
+        return ConversationResponse.builder()
+                .conversationId(savedConversation.getId())
+                .conversationAvatar(savedConversation.getAvatar())
+                .conversationTitle(savedConversation.getTitle())
+                .conversationType(savedConversation.getType())
+                .conversationLastSenderId(savedConversation.getLastSenderId())
+                .conversationLastMessage(savedConversation.getLastMessage())
+                .conversationLastMessageAt(savedConversation.getLastMessageAt())
+                .conversationLastReadMessageId(null)
+                .conversationUnreadCount(0L)
+                .userId(currentUser.getId())
+                .userName(currentUser.getUserName())
+                .userAvatar(currentUser.getAvatar())
+                .userIsOnline(userService.checkOnline(currentUser.getId()))
+                .build();
     }
 
     public Long getUnreadCount(Long conversationId, String lastReadId) {
@@ -85,6 +173,7 @@ public class ConversationsServiceImpl implements ConversationsService {
                 User user = userMap.get(senderId);
 
                 if (user != null) {
+                    conversation.setUserIsOnline(userService.checkOnline(senderId));
                     conversation.setConversationLastSenderName(user.getUserName());
                 }
             }

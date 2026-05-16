@@ -2,23 +2,48 @@ import { Box, IconButton, Drawer } from '@mui/material';
 import SideBar from './components/SideBar';
 import RightPanel from './components/RightPanel';
 import ChatWindow from './components/ChatWindow';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import InfoIcon from '@mui/icons-material/Info';
+import { useUser } from './components/context/UserContext';
+import { useChatStore } from './store/useChatStore';
+import useDebounce from './hooks/useDebounce';
+import { getListMemberByConversationId } from './apis';
+import { TYPE } from './utils/constants';
 
 function App() {
   const [conversation, setConversation] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [searchConversation, setSearchConversation] = useState('');
+  const { user } = useUser();
+  const fetchConversations = useChatStore((state) => state.fetchConversations);
+  const setMembers = useChatStore((state) => state.setMembers);
+  const debouncedSearchConversation = useDebounce(searchConversation, 500);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  useEffect(() => {
+    if (user?.id) fetchConversations(user.id, debouncedSearchConversation);
+  }, [user?.id, debouncedSearchConversation, fetchConversations]);
 
-  const handleRightPanelToggle = () => {
-    setRightPanelOpen(!rightPanelOpen);
-  };
+  useEffect(() => {
+    if (!conversation?.conversationId || conversation?.conversationType !== TYPE.GROUP) {
+      setMembers([]);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchMembers = async () => {
+      const result = await getListMemberByConversationId(conversation.conversationId);
+      if (!ignore && result) setMembers(result.data);
+    };
+
+    fetchMembers();
+
+    return () => {
+      ignore = true;
+    };
+  }, [conversation?.conversationId, conversation?.conversationType, setMembers]);
 
   return (
     <Box sx={{
@@ -28,27 +53,14 @@ function App() {
       overflow: 'hidden',
       bgcolor: '#F3F5FF'
     }}>
-      <Drawer
-        variant='temporary'
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 300, bgcolor: '#F8F9FC' }
-        }}
-      >
-        <SideBar selectedIndex={selectedIndex} onSelectConversation={(id) => setSelectedIndex(id)} setConversation={setConversation} />
-      </Drawer>
-
       <Box sx={{
-        width: { xs: 'none', sm: '380px', md: '420px' },
-        display: { xs: 'none', sm: 'block' },
+        width: { xs: '250px', sm: '380px', md: '420px' },
+        display: { xs: 'block', sm: 'block' },
         flexShrink: 0,
         borderRight: '1px solid #EEF2FF',
         bgcolor: '#F8F9FC'
       }}>
-        <SideBar selectedIndex={selectedIndex} onSelectConversation={(id) => setSelectedIndex(id)} setConversation={setConversation} />
+        <SideBar selectedIndex={selectedIndex} onSelectConversation={(id) => setSelectedIndex(id)} setConversation={setConversation} searchConversation={searchConversation} setSearchConversation={setSearchConversation} />
       </Box>
 
       <Box sx={{
@@ -59,68 +71,21 @@ function App() {
         position: 'relative',
         bgcolor: '#FFFFFF'
       }}>
-        <Box sx={{
-          display: { xs: 'flex', lg: 'none' },
-          alignItems: 'center',
-          p: 1,
-          justifyContent: 'space-between',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          bgcolor: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(8px)',
-          borderBottom: '1px solid #EEF2FF'
-        }}>
-          <IconButton
-            color='inherit'
-            aria-label='open drawer'
-            edge='start'
-            onClick={handleDrawerToggle}
-            sx={{ display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <IconButton
-            color='inherit'
-            aria-label='open info'
-            edge='end'
-            onClick={handleRightPanelToggle}
-            sx={{ display: { lg: 'none' } }}
-          >
-            <InfoIcon />
-          </IconButton>
-        </Box>
-
         <Box sx={{ flexGrow: 1, mt: { xs: '56px', lg: 0 } }}>
-          <ChatWindow conversation={conversation} />
+          <ChatWindow conversation={conversation} rightPanelOpen={rightPanelOpen} setRightPanelOpen={setRightPanelOpen} />
         </Box>
       </Box>
 
       {conversation && (
         <>
-          <Drawer
-            anchor='right'
-            variant='temporary'
-            open={rightPanelOpen}
-            onClose={handleRightPanelToggle}
-            ModalProps={{ keepMounted: true }}
+          <Box
             sx={{
-              display: { xs: 'block', lg: 'none' },
-              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 300 }
-            }}
-          >
-            <RightPanel conversation={conversation} />
-          </Drawer>
-
-          <Box sx={{
-            width: '360px',
-            display: { xs: 'none', lg: 'block' },
-            flexShrink: 0,
-            borderLeft: '1px solid #EEF2FF',
-            bgcolor: '#FFFFFF'
-          }}>
+              width: '360px',
+              display: { xs: 'none', lg: rightPanelOpen ? 'none' : 'block' },
+              flexShrink: 0,
+              borderLeft: '1px solid #EEF2FF',
+              bgcolor: '#FFFFFF'
+            }}>
             <RightPanel conversation={conversation} />
           </Box>
         </>

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import com.talktalk.mapper.UserMapper;
 import com.talktalk.model.entity.User;
 import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.service.UserService;
+import com.talktalk.utils.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
+    RedisTemplate<String, String> redisTemplate;
 
     @Override
     public User save(User user) {
@@ -47,7 +50,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getById(Long id) {
-        if(id == null) {
+        if (id == null) {
             throw new AppException(ErrorCode.NOT_FOUND);
         }
         return userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -95,6 +98,11 @@ public class UserServiceImpl implements UserService {
     public UserResponse findByEmailForSocket(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return userMapper.toUserResponse(user);
+    }
+
+    @Override
+    public Boolean checkOnline(Long userId) {
+        return redisTemplate.opsForSet().members(Utils.ONLINE_USERS_KEY).contains(userId.toString());
     }
 
 }

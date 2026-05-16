@@ -31,6 +31,9 @@ public class UserController {
     @GetMapping
     public ApiResponse<UserResponse> getCurrentUser() {
         UserResponse user = utils.getCurrentUser();
+        if (user != null) {
+            user.setIsOnline(userService.checkOnline(user.getId()));
+        }
         log.info("User: {}", user);
         return ApiResponse.<UserResponse>builder()
                 .code(HttpStatus.OK.value())

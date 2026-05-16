@@ -22,7 +22,7 @@ import { searchUsers } from '~/apis';
 import useDebounce from '~/hooks/useDebounce';
 import ProfileModal from './ProfileModal';
 import { useStomp } from '~/components/context/StompContext';
-import { useUser } from './context/UserContext';
+import { useUser } from '../context/UserContext';
 import { useFriendStore } from '~/store/useFriendStore';
 
 export default function UserSearchDialog({ open, onClose }) {

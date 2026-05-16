@@ -1,5 +1,5 @@
 import { Avatar, Box, Paper, Typography, List, ListItem, ListItemAvatar, ListItemText, Badge, Switch, Button, IconButton, ListItemButton } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ShieldIcon from '@mui/icons-material/Shield';
 import { styled } from '@mui/material/styles';
@@ -9,7 +9,6 @@ import DialogConfirm from './Form/DialogConfirm';
 import DialogAddMembers from './Form/DialogAddMembers';
 import { useUser } from './context/UserContext';
 import { TYPE } from '~/utils/constants';
-import { getListMemberByConversationId } from '~/apis';
 import { useChatStore } from '~/store/useChatStore';
 import { useStomp } from '~/components/context/StompContext';
 
@@ -21,20 +20,9 @@ function RightPanel({ conversation }) {
     const [selectedIndex, setSelectedIndex] = useState(null);
 
     const { user } = useUser();
-    const { members, setMembers } = useChatStore();
+    const { members } = useChatStore();
     const { sendMessage } = useStomp();
 
-    useEffect(() => {
-        if (conversation?.conversationType === TYPE.GROUP) {
-            const getListMember = async () => {
-                const result = await getListMemberByConversationId(conversation?.conversationId);
-                if (result) {
-                    setMembers(result.data);
-                }
-            }
-            getListMember();
-        }
-    }, [conversation?.conversationId, conversation?.conversationType, setMembers])
 
     const handleListItemClick = (event, index) => {
         setSelectedIndex(index);

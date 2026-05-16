@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useStomp } from './context/StompContext';
+import { useStomp } from '../context/StompContext';
 import { useChatStore } from '~/store/useChatStore';
-import { useUser } from './context/UserContext';
+import { useUser } from '../context/UserContext';
 
 export default function GlobalMessageHandler() {
   const { connected, subscribe, unsubscribe } = useStomp();
