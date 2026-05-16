@@ -10,9 +10,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import com.talktalk.dto.request.CreateGroupConversationRequest;
 import com.talktalk.dto.response.ConversationResponse;
 import com.talktalk.dto.response.MembersResponse;
+import com.talktalk.dto.response.RoleUserInConversation;
 import com.talktalk.exception.AppException;
 import com.talktalk.exception.ErrorCode;
 import com.talktalk.exception.enums.MemberRole;
@@ -59,8 +60,7 @@ public class ConversationsServiceImpl implements ConversationsService {
         Map<Long, ConversationResponse> conversationMap = new LinkedHashMap<>();
         conversations.forEach(conversation -> conversationMap.put(conversation.getConversationId(), conversation));
         List<ConversationResponse> response = new ArrayList<>(conversationMap.values());
-        response = setUserForConversation(response);
-        return response;
+        return setUserForConversation(response);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ConversationsServiceImpl implements ConversationsService {
     @Override
     public ConversationResponse createGroupConversation(Long currentUserId, CreateGroupConversationRequest request) {
         if (request == null || request.getTitle() == null || request.getTitle().trim().isEmpty()) {
-            throw new AppException(ErrorCode.NOT_FOUND);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
         List<Long> requestedMemberIds = request.getMemberIds() == null ? List.of() : request.getMemberIds().stream()
@@ -82,7 +82,7 @@ public class ConversationsServiceImpl implements ConversationsService {
                 .toList();
 
         if (requestedMemberIds.isEmpty()) {
-            throw new AppException(ErrorCode.NOT_FOUND);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
         List<User> members = userRepository.findAllById(requestedMemberIds);
@@ -145,6 +145,20 @@ public class ConversationsServiceImpl implements ConversationsService {
                 .build();
     }
 
+    @Override
+    public void deleteGroupConversation(Long currentUserId, Long conversationId) {
+        RoleUserInConversation roleUserInConversation = conversationsMembersRepository.getRoleUserInConversation(conversationId, currentUserId);
+
+        if (roleUserInConversation == null || roleUserInConversation.getRole() != MemberRole.ADMIN) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        int updatedRows = conversationsRepository.markDeletedGroupConversation(conversationId, LocalDateTime.now());
+        if (updatedRows == 0) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+    }
+
     public Long getUnreadCount(Long conversationId, String lastReadId) {
         if (lastReadId == null) {
             return mongoTemplate.count(new Query(Criteria.where("conversationId").is(conversationId)), Message.class);
@@ -166,12 +180,9 @@ public class ConversationsServiceImpl implements ConversationsService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         conversations.forEach(conversation -> {
-
             Long senderId = conversation.getConversationLastSenderId();
-
             if (senderId != null) {
                 User user = userMap.get(senderId);
-
                 if (user != null) {
                     conversation.setUserIsOnline(userService.checkOnline(senderId));
                     conversation.setConversationLastSenderName(user.getUserName());

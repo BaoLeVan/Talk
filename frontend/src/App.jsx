@@ -1,10 +1,8 @@
-import { Box, IconButton, Drawer } from '@mui/material';
+import { Box } from '@mui/material';
 import SideBar from './components/SideBar';
 import RightPanel from './components/RightPanel';
 import ChatWindow from './components/ChatWindow';
 import { useEffect, useState } from 'react';
-import MenuIcon from '@mui/icons-material/Menu';
-import InfoIcon from '@mui/icons-material/Info';
 import { useUser } from './components/context/UserContext';
 import { useChatStore } from './store/useChatStore';
 import useDebounce from './hooks/useDebounce';
@@ -12,7 +10,7 @@ import { getListMemberByConversationId } from './apis';
 import { TYPE } from './utils/constants';
 
 function App() {
-  const [conversation, setConversation] = useState(null)
+  const [conversation, setConversation] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [searchConversation, setSearchConversation] = useState('');
@@ -45,6 +43,18 @@ function App() {
     };
   }, [conversation?.conversationId, conversation?.conversationType, setMembers]);
 
+  const handleDeleteConversation = async (conversationId) => {
+    if (selectedIndex === conversationId) {
+      setSelectedIndex(null);
+      setConversation(null);
+      setMembers([]);
+    }
+
+    if (user?.id) {
+      await fetchConversations(user.id, debouncedSearchConversation);
+    }
+  };
+
   return (
     <Box sx={{
       display: 'flex',
@@ -60,7 +70,13 @@ function App() {
         borderRight: '1px solid #EEF2FF',
         bgcolor: '#F8F9FC'
       }}>
-        <SideBar selectedIndex={selectedIndex} onSelectConversation={(id) => setSelectedIndex(id)} setConversation={setConversation} searchConversation={searchConversation} setSearchConversation={setSearchConversation} />
+        <SideBar
+          selectedIndex={selectedIndex}
+          onSelectConversation={(id) => setSelectedIndex(id)}
+          setConversation={setConversation}
+          searchConversation={searchConversation}
+          setSearchConversation={setSearchConversation}
+        />
       </Box>
 
       <Box sx={{
@@ -77,21 +93,19 @@ function App() {
       </Box>
 
       {conversation && (
-        <>
-          <Box
-            sx={{
-              width: '360px',
-              display: { xs: 'none', lg: rightPanelOpen ? 'none' : 'block' },
-              flexShrink: 0,
-              borderLeft: '1px solid #EEF2FF',
-              bgcolor: '#FFFFFF'
-            }}>
-            <RightPanel conversation={conversation} />
-          </Box>
-        </>
+        <Box
+          sx={{
+            width: '360px',
+            display: { xs: 'none', lg: rightPanelOpen ? 'none' : 'block' },
+            flexShrink: 0,
+            borderLeft: '1px solid #EEF2FF',
+            bgcolor: '#FFFFFF'
+          }}>
+          <RightPanel conversation={conversation} onDeleteConversation={handleDeleteConversation} />
+        </Box>
       )}
     </Box>
-  )
+  );
 }
 
-export default App
+export default App;
