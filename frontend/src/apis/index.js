@@ -83,3 +83,9 @@ export const createGroupConversation = async (payload) => {
     const response = await authorizeAxios.post(`${API_ROOT}/api/v1/conversations/groups`, payload);
     return response.data;
 }
+
+
+export const deleteGroupConversation = async (conversationId) => {
+    const response = await authorizeAxios.delete(`${API_ROOT}/api/v1/conversations/groups/${conversationId}`);
+    return response.data;
+}

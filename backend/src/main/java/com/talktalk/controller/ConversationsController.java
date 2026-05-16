@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,6 +56,16 @@ public class ConversationsController {
                 .code(HttpStatus.OK.value())
                 .message("Create group conversation successfully")
                 .data(conversation)
+                .build();
+    }
+
+    @DeleteMapping("/groups/{conversationId}")
+    public ApiResponse<Void> deleteGroupConversation(@PathVariable Long conversationId) {
+        Long currentUserId = getCurrentUserId();
+        conversationsService.deleteGroupConversation(currentUserId, conversationId);
+        return ApiResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message("Delete group conversation successfully")
                 .build();
     }
 

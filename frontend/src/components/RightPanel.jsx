@@ -9,15 +9,18 @@ import DialogConfirm from './Form/DialogConfirm';
 import DialogAddMembers from './Form/DialogAddMembers';
 import { useUser } from './context/UserContext';
 import { TYPE } from '~/utils/constants';
+import { deleteGroupConversation } from '~/apis';
+import { toast } from 'react-toastify';
 import { useChatStore } from '~/store/useChatStore';
 import { useStomp } from '~/components/context/StompContext';
 
 
-function RightPanel({ conversation }) {
+function RightPanel({ conversation, onDeleteConversation }) {
     const [userDelete, setUserDelete] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
+    const [openDeleteGroupDialog, setOpenDeleteGroupDialog] = useState(false);
 
     const { user } = useUser();
     const { members } = useChatStore();
@@ -47,6 +50,16 @@ function RightPanel({ conversation }) {
             conversationId: conversationId,
             userId: user?.id
         })
+    }
+
+    const handleDeleteGroup = async () => {
+        try {
+            const result = await deleteGroupConversation(conversation?.conversationId);
+            toast.success(result?.message || 'Delete group successfully');
+            onDeleteConversation?.(conversation?.conversationId);
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Delete group failed');
+        }
     }
 
     const handleAddMembers = (selectedUsers) => {
@@ -248,6 +261,7 @@ function RightPanel({ conversation }) {
                             Leave Group
                         </Button>
                         <Button fullWidth variant="outlined" color='error'
+                            onClick={() => setOpenDeleteGroupDialog(true)}
                             sx={{ borderRadius: '10px', fontWeight: 600, textTransform: 'none' }}>
                             Delete Group
                         </Button>
@@ -273,6 +287,13 @@ function RightPanel({ conversation }) {
                 setOpenDialog={setOpenAddDialog}
                 members={members}
                 onAdd={handleAddMembers}
+            />
+            <DialogConfirm
+                openDialog={openDeleteGroupDialog}
+                setOpenDialog={setOpenDeleteGroupDialog}
+                title={`Delete Group ${conversation?.conversationTitle}`}
+                description={`Are you sure you want to delete ${conversation?.conversationTitle}?`}
+                handleFunction={handleDeleteGroup}
             />
         </>
     )

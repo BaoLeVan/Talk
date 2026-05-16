@@ -12,4 +12,6 @@ public interface ConversationsService {
     List<MembersResponse> getListMemberByConversationId(Long conversationId);
 
     ConversationResponse createGroupConversation(Long currentUserId, CreateGroupConversationRequest request);
+
+    void deleteGroupConversation(Long currentUserId, Long conversationId);
 }

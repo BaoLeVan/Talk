@@ -1,10 +1,12 @@
 package com.talktalk.repository.jpa;
 
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Repository;
 import com.talktalk.dto.response.ConversationResponse;
 import com.talktalk.dto.response.MembersResponse;
 import com.talktalk.model.entity.Conversations;
+
+import jakarta.transaction.Transactional;
 
 @Repository
 public interface ConversationsRepository extends JpaRepository<Conversations, Long> {
@@ -37,4 +41,9 @@ public interface ConversationsRepository extends JpaRepository<Conversations, Lo
 
 
     Optional<Conversations> findByIdAndDeletedAtIsNull(Long id);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Conversations c SET c.deletedAt = :deletedAt WHERE c.id = :conversationId AND c.deletedAt IS NULL AND c.type = 1")
+    int markDeletedGroupConversation(@Param("conversationId") Long conversationId, @Param("deletedAt") LocalDateTime deletedAt);
 }

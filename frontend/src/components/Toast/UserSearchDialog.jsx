@@ -18,12 +18,14 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonSearchRoundedIcon from '@mui/icons-material/PersonSearchRounded';
 import { searchUsers } from '~/apis';
 import useDebounce from '~/hooks/useDebounce';
 import ProfileModal from './ProfileModal';
 import { useStomp } from '~/components/context/StompContext';
 import { useUser } from '../context/UserContext';
 import { useFriendStore } from '~/store/useFriendStore';
+import { COLORS } from '~/utils/common';
 
 export default function UserSearchDialog({ open, onClose }) {
   const [keyword, setKeyword] = useState('');
@@ -41,9 +43,7 @@ export default function UserSearchDialog({ open, onClose }) {
       setLoading(true);
       searchUsers(debouncedKeyword)
         .then((response) => {
-          // response structure: { code, message, data: UserResponse[] }
           const usersList = response?.data || [];
-          // Filter out current user
           const filtered = usersList.filter((u) => u.id !== currentUser?.id);
           setUsers(filtered);
         })
@@ -69,62 +69,91 @@ export default function UserSearchDialog({ open, onClose }) {
 
   const handleSendFriendRequest = (receiverId) => {
     sendFriendRequestAction(sendMessage)(receiverId, '');
-    // Optionally close profile and dialog after sending
     handleCloseProfile();
     onClose();
   };
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Tìm kiếm người dùng
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '24px', overflow: 'hidden', boxShadow: '0 24px 64px rgba(15, 23, 42, 0.16)' } }}
+      >
+        <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center' }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: '16px', bgcolor: COLORS.primaryLight, color: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <PersonSearchRoundedIcon />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 800, fontSize: '18px', color: COLORS.text }}>Search users</Typography>
+                <Typography sx={{ fontSize: '13px', color: COLORS.textMuted }}>Find people to connect and chat with</Typography>
+              </Box>
+            </Box>
+            <IconButton onClick={onClose} size="small" sx={{ color: COLORS.textSecondary }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </DialogTitle>
-        <DialogContent>
+
+        <DialogContent sx={{ px: 3, pb: 3 }}>
           <TextField
             fullWidth
-            placeholder="Nhập tên người dùng..."
+            placeholder="Search by username or email"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             autoFocus
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
+                  <SearchIcon sx={{ fontSize: 18, color: COLORS.textMuted }} />
                 </InputAdornment>
               ),
+              sx: {
+                height: 52,
+                borderRadius: '18px',
+                bgcolor: '#F5F6FA',
+                '& fieldset': { border: 'none' },
+                '&.Mui-focused': { bgcolor: COLORS.white, boxShadow: `0 0 0 2px ${COLORS.primary}22` }
+              }
             }}
             sx={{ mb: 2 }}
           />
+
           {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={32} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+              <CircularProgress size={30} sx={{ color: COLORS.primary }} />
             </Box>
           )}
+
           {!loading && users.length === 0 && debouncedKeyword && (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-              Không tìm thấy người dùng.
+            <Typography sx={{ textAlign: 'center', py: 4, fontSize: '14px', color: COLORS.textMuted }}>
+              No users found.
             </Typography>
           )}
-          <List sx={{ maxHeight: 400, overflow: 'auto' }}>
+
+          {!loading && !debouncedKeyword && (
+            <Box sx={{ p: 3, textAlign: 'center', borderRadius: '20px', bgcolor: '#F8F9FF' }}>
+              <Typography sx={{ fontWeight: 700, color: COLORS.text, mb: 0.5 }}>Start searching</Typography>
+              <Typography sx={{ fontSize: '13px', color: COLORS.textMuted }}>Type a username or email to find users.</Typography>
+            </Box>
+          )}
+
+          <List sx={{ maxHeight: 420, overflowY: 'auto', p: 0, scrollbarWidth: 'none', msOverflowStyle: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
             {users.map((user) => (
-              <ListItem
-                key={user.id}
-                disablePadding
-                sx={{ borderRadius: 2, mb: 0.5 }}
-              >
-                <ListItemButton onClick={() => handleUserClick(user)}>
+              <ListItem key={user.id} disablePadding sx={{ mb: 0.75 }}>
+                <ListItemButton onClick={() => handleUserClick(user)} sx={{ borderRadius: '18px', px: 1.25, py: 1.1, '&:hover': { bgcolor: COLORS.primaryHover } }}>
                   <ListItemAvatar>
-                    <Avatar src={user.avatar} alt={user.userName}>
+                    <Avatar src={user.avatar} alt={user.userName} sx={{ width: 44, height: 44, boxShadow: '0 8px 18px rgba(0,0,0,0.08)' }}>
                       {user.userName?.charAt(0).toUpperCase()}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={user.userName}
-                    secondary={user.email}
+                    primary={<Typography sx={{ fontWeight: 800, color: COLORS.text, fontSize: '15px' }}>{user.userName}</Typography>}
+                    secondary={<Typography sx={{ color: COLORS.textMuted, fontSize: '13px' }}>{user.email}</Typography>}
                   />
                 </ListItemButton>
               </ListItem>
