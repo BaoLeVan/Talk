@@ -31,6 +31,7 @@ public class ConversationResponse {
     Long userId;
     String userName;
     String userAvatar;
+    Boolean userIsOnline;
 
     public ConversationResponse(Long conversationId, String conversationAvatar, String conversationTitle,
             TypeConversation conversationType, Long conversationLastSenderId, String conversationLastMessage,

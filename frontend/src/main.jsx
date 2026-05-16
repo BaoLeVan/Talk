@@ -10,8 +10,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import UserContextProvider from './components/context/UserContext.jsx';
 import StompProvider from './components/context/StompContext.jsx';
-import FriendNotificationToast from './components/FriendNotificationToast.jsx';
-import GlobalMessageHandler from './components/GlobalMessageHandler.jsx';
+import FriendNotificationToast from './components/GlobalSocket/FriendNotificationToast.jsx';
+import GlobalMessageHandler from './components/GlobalSocket/GlobalMessageHandler.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {

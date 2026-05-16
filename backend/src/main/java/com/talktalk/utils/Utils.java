@@ -16,6 +16,8 @@ public class Utils {
     @Autowired
     UserService userService;
 
+    public static final String ONLINE_USERS_KEY = "users:online";
+
     public UserResponse getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();

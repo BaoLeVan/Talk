@@ -72,3 +72,17 @@ export const TYPE_MESSAGE = {
   VIDEO: 'VIDEO',
   FILE: 'FILE'
 }
+
+export const COLORS = {
+  primary: '#5B67FF',
+  primaryLight: '#EEF2FF',
+  primaryHover: '#F1F3FF',
+  bg: '#F8F9FC',
+  white: '#FFFFFF',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textMuted: '#94A3B8',
+  unreadBadge: '#FF5C8A',
+  online: '#22C55E',
+  border: '#EEF2FF',
+}

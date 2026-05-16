@@ -1,4 +1,6 @@
-package com.talktalk.dto.response;
+package com.talktalk.dto.request;
+
+import java.util.List;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -12,10 +14,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserResponse {
-    Long id;
-    String email;
-    String userName;
-    String avatar;
-    Boolean isOnline;
+public class CreateGroupConversationRequest {
+    String title;
+    List<Long> memberIds;
 }

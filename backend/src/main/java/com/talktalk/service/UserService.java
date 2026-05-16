@@ -18,4 +18,6 @@ public interface UserService extends CrudService<User, Long> {
     List<UserResponse> searchUsers(String keyword, Long excludeUserId);
 
     UserResponse findByEmailForSocket(String email);
+
+    Boolean checkOnline(Long userId);
 }

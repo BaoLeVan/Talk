@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
-import { Box, Typography } from '@mui/material'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Box, CircularProgress, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
@@ -8,11 +8,41 @@ import { useUser } from './context/UserContext'
 import { useStomp } from '~/components/context/StompContext'
 import moment from 'moment'
 import { useChatStore } from '~/store/useChatStore'
+import { COLORS } from '~/utils/common'
 
-function ChatWindow({ conversation }) {
+function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
   const { user } = useUser();
-  const { setMessages, markConversationRead, setCurrentConversationId } = useChatStore();
+  const { messages, setMessages, markConversationRead, setCurrentConversationId } = useChatStore();
   const { sendMessage } = useStomp();
+  const messagesContainerRef = useRef(null);
+  const isLoadingOlderRef = useRef(false);
+  const skipNextAutoScrollRef = useRef(false);
+  const previousMessagesLengthRef = useRef(0);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasNext, setHasNext] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+
+  const mapMessages = useCallback((rawMessages = []) => rawMessages.map((message) => {
+    const isSystemMessage = message?.messageType === 'SYSTEM';
+    return {
+      content: message?.content,
+      time: moment(message?.updatedAt).format('dddd h:mm A'),
+      isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
+      senderName: isSystemMessage ? null : message?.user?.userName,
+      avatar: isSystemMessage ? null : message?.user?.avatar,
+      status: message?.status?.toLowerCase(),
+      attachments: message?.attachments || [],
+      messageType: message?.messageType,
+      action: message?.action
+    };
+  }), [user?.id]);
+
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      const el = messagesContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  }, []);
 
   useEffect(() => {
     setCurrentConversationId(conversation?.conversationId ?? null);
@@ -20,38 +50,106 @@ function ChatWindow({ conversation }) {
   }, [conversation?.conversationId, setCurrentConversationId]);
 
   useEffect(() => {
-    if (conversation) {
-      const getMessages = async () => {
-        const result = await getMessagesByConversationId({ cursor: null, conversationId: conversation.conversationId });
-        if (result && result.data.messages.length > 0) {
-          const lastMessageId = result.data.messages[result.data.messages.length - 1].idMessage;
-
-          sendMessage('/app/chat.markRead', {
-            conversationId: conversation.conversationId,
-            lastReadMessageId: lastMessageId,
-          });
-          markConversationRead(conversation.conversationId);
-
-          const messageContent = result.data.messages.map((message) => {
-            const isSystemMessage = message?.messageType === 'SYSTEM';
-            return {
-              content: message?.content,
-              time: moment(message?.updatedAt).format('dddd h:mm A'),
-              isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
-              senderName: isSystemMessage ? null : message?.user?.userName,
-              avatar: isSystemMessage ? null : message?.user?.avatar,
-              status: message?.status?.toLowerCase(),
-              attachments: message?.attachments || [],
-              messageType: message?.messageType,
-              action: message?.action
-            };
-          });
-          setMessages(messageContent);
-        }
-      }
-      getMessages();
+    if (!conversation?.conversationId) {
+      setMessages([]);
+      setNextCursor(null);
+      setHasNext(false);
+      return;
     }
-  }, [conversation, user?.id]);
+
+    let ignore = false;
+
+    const getMessages = async () => {
+      const result = await getMessagesByConversationId({
+        cursor: null,
+        conversationId: conversation.conversationId,
+        size: 25,
+      });
+
+      if (ignore || !result) return;
+
+      const rawMessages = result.data?.messages || [];
+      setMessages(mapMessages(rawMessages));
+      setNextCursor(result.data?.nextCursor || null);
+      setHasNext(Boolean(result.data?.hasNext));
+      previousMessagesLengthRef.current = rawMessages.length;
+
+      if (rawMessages.length > 0) {
+        const lastMessageId = rawMessages[rawMessages.length - 1].idMessage;
+
+        sendMessage('/app/chat.markRead', {
+          conversationId: conversation.conversationId,
+          lastReadMessageId: lastMessageId,
+        });
+        markConversationRead(conversation.conversationId);
+      }
+
+      scrollToBottom();
+    };
+
+    getMessages();
+
+    return () => {
+      ignore = true;
+    };
+  }, [conversation?.conversationId, mapMessages, markConversationRead, scrollToBottom, sendMessage, setMessages]);
+
+  const loadOlderMessages = useCallback(async () => {
+    const el = messagesContainerRef.current;
+    if (!conversation?.conversationId || !hasNext || !nextCursor || isLoadingOlderRef.current || messages.length < 25) return;
+
+    isLoadingOlderRef.current = true;
+    setIsLoadingOlder(true);
+
+    const previousScrollHeight = el?.scrollHeight || 0;
+    const previousScrollTop = el?.scrollTop || 0;
+
+    try {
+      const result = await getMessagesByConversationId({
+        cursor: nextCursor,
+        conversationId: conversation.conversationId,
+        size: 25,
+      });
+
+      if (!result) return;
+
+      const olderMessages = mapMessages(result.data?.messages || []);
+      skipNextAutoScrollRef.current = true;
+      setMessages([...olderMessages, ...useChatStore.getState().messages]);
+      setNextCursor(result.data?.nextCursor || null);
+      setHasNext(Boolean(result.data?.hasNext));
+
+      requestAnimationFrame(() => {
+        const currentEl = messagesContainerRef.current;
+        if (!currentEl) return;
+        currentEl.scrollTop = currentEl.scrollHeight - previousScrollHeight + previousScrollTop;
+      });
+    } finally {
+      isLoadingOlderRef.current = false;
+      setIsLoadingOlder(false);
+    }
+  }, [conversation?.conversationId, hasNext, mapMessages, messages.length, nextCursor, setMessages]);
+
+  const handleMessagesScroll = useCallback((event) => {
+    const el = event.currentTarget;
+    if (el.scrollTop <= 80) loadOlderMessages();
+  }, [loadOlderMessages]);
+
+  useEffect(() => {
+    const previousLength = previousMessagesLengthRef.current;
+
+    if (skipNextAutoScrollRef.current) {
+      skipNextAutoScrollRef.current = false;
+      previousMessagesLengthRef.current = messages.length;
+      return;
+    }
+
+    if (!isLoadingOlderRef.current && messages.length > previousLength) {
+      scrollToBottom();
+    }
+
+    previousMessagesLengthRef.current = messages.length;
+  }, [messages.length, scrollToBottom]);
 
   if (!conversation) {
     return (
@@ -112,19 +210,31 @@ function ChatWindow({ conversation }) {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      bgcolor: '#FFFFFF',
+      bgcolor: '#FFFFFF'
     }}>
       <Box sx={{ flexShrink: 0 }}>
-        <HeaderChat conversation={conversation} />
+        <HeaderChat conversation={conversation} rightPanelOpen={rightPanelOpen} setRightPanelOpen={setRightPanelOpen} />
       </Box>
-      <Box sx={{
-        flexGrow: 1,
-        height: 0,
-        overflowY: 'auto',
-        py: 2,
-        px: 1,
-        background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FF 100%)',
-      }}>
+      <Box
+        ref={messagesContainerRef}
+        onScroll={handleMessagesScroll}
+        sx={{
+          flexGrow: 1,
+          height: 0,
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+          py: 2,
+          px: 1,
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FF 100%)',
+        }}
+      >
+        {isLoadingOlder && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress size={28} sx={{ color: COLORS.primary }} />
+          </Box>
+        )}
         <MessageItem />
       </Box>
       <Box sx={{

@@ -53,8 +53,6 @@ export const useChatStore = create((set) => ({
         set({ isLoading: true });
         try {
             const result = await getAllConversationsByUser(userId, value);
-            console.log(result);
-            
             if (result) set({ conversations: result.data });
         } catch (error) {
             console.error("Failed to fetch conversations:", error);

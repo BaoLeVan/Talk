@@ -1,48 +1,34 @@
-import { Avatar, Badge, Box, CircularProgress, Dialog, FormControl, IconButton, InputAdornment, List, ListItemButton, Paper, TextField, Typography } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import { Avatar, Badge, Box, CircularProgress, Collapse, Dialog, IconButton, InputAdornment, List, ListItemButton, Paper, TextField, Typography } from '@mui/material'
+import React, { useState } from 'react'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { LogoutOutlined, Search, People } from '@mui/icons-material';
-import { formatTimeChat } from '~/utils/common';
+import { KeyboardArrowDown, KeyboardArrowRight, LogoutOutlined, Search, People } from '@mui/icons-material';
+import { COLORS, formatTimeChat } from '~/utils/common';
 import { useNavigate } from 'react-router';
-import { getAllConversationsByUser, logout, setAccessToken } from '~/apis';
+import { createGroupConversation, logout, setAccessToken } from '~/apis';
 import { toast } from 'react-toastify';
 import { useUser } from '~/components/context/UserContext';
-import useDebounce from '../hooks/useDebounce';
 import { TYPE } from '~/utils/constants';
 import FriendsList from './FriendsList';
-import NotificationsList from './NotificationsList';
-import ProfileModal from './ProfileModal';
-import UserSearchDialog from './UserSearchDialog';
+import NotificationsList from './Toast/NotificationsList';
+import ProfileModal from './Toast/ProfileModal';
 import { useChatStore } from '~/store/useChatStore';
+import CreateGroupConversationDialog from './Form/CreateGroupConversationDialog';
 
-const COLORS = {
-  primary: '#5B67FF',
-  primaryLight: '#EEF2FF',
-  primaryHover: '#F1F3FF',
-  bg: '#F8F9FC',
-  white: '#FFFFFF',
-  text: '#111827',
-  textSecondary: '#6B7280',
-  textMuted: '#94A3B8',
-  unreadBadge: '#FF5C8A',
-  online: '#22C55E',
-  border: '#EEF2FF',
-}
-
-function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
+function SideBar({ selectedIndex, onSelectConversation, setConversation, searchConversation, setSearchConversation }) {
   const navigate = useNavigate();
   const [friendsDialogOpen, setFriendsDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [userSearchDialogOpen, setUserSearchDialogOpen] = useState(false);
-  const [searchConversation, setSearchConversation] = useState('');
+  const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState(0);
-  const { conversations, fetchConversations, isLoading } = useChatStore();
-  const debouncedValue = useDebounce(searchConversation, 500);
+  const [collapsedSections, setCollapsedSections] = useState({ private: false, group: false });
+  const { conversations, isLoading, fetchConversations } = useChatStore();
 
-  useEffect(() => {
-    if (user) fetchConversations(user.id, debouncedValue);
-  }, [user, debouncedValue]);
+  const privateConversations = conversations?.filter((conversation) => conversation.conversationType === TYPE.PRIVATE) || [];
+  const groupConversations = conversations?.filter((conversation) => conversation.conversationType === TYPE.GROUP) || [];
+
+  const toggleSection = (section) => {
+    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const handleLogout = async () => {
     setAccessToken(null);
@@ -52,14 +38,89 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
     navigate('/login');
   }
 
+  const handleCreateGroupConversation = async (payload) => {
+    const result = await createGroupConversation(payload);
+    const createdConversation = result?.data;
+
+    if (user?.id) {
+      await fetchConversations(user.id, searchConversation || '');
+    }
+
+    if (createdConversation?.conversationId) {
+      onSelectConversation(createdConversation.conversationId);
+      setConversation(createdConversation);
+      setCollapsedSections((prev) => ({ ...prev, group: false }));
+      toast.success(result?.message || 'Tạo nhóm thành công');
+    }
+
+    setCreateGroupDialogOpen(false);
+  };
+
   const handleListItemClick = (event, index) => {
     onSelectConversation(index);
     const result = conversations.find((data) => data.conversationId === index);
-    console.log(result);
     setConversation(result);
   };
 
-  const tabs = ['Tất cả', 'Chưa đọc', 'Yêu thích', 'Nhóm'];
+  const renderConversationItem = (conversation) => {
+    const isSelected = selectedIndex === conversation.conversationId;
+    const hasUnread = conversation.conversationUnreadCount > 0;
+    const displayName = conversation.conversationType === TYPE.GROUP ? conversation.conversationTitle : conversation.userName;
+    const avatarSrc = conversation.conversationType === TYPE.GROUP ? conversation.conversationAvatar : conversation.userAvatar;
+
+    return (
+      <ListItemButton key={conversation.conversationId} selected={isSelected} onClick={(e) => handleListItemClick(e, conversation.conversationId)} sx={{ px: 2, py: 1.5, mx: 1.5, my: 0.5, borderRadius: '24px', minHeight: '90px', alignItems: 'center', transition: 'all 0.2s ease', bgcolor: isSelected ? COLORS.primaryLight : 'transparent', '&:hover': { bgcolor: isSelected ? COLORS.primaryLight : '#F8F9FF', transform: 'scale(1.01)' }, '&.Mui-selected': { bgcolor: COLORS.primaryLight }, '&.Mui-selected:hover': { bgcolor: COLORS.primaryLight } }}>
+        <Box sx={{ mr: 2, flexShrink: 0 }}>
+          <Box sx={{ position: 'relative' }}>
+            <Avatar alt={displayName} src={avatarSrc} sx={{ width: 56, height: 56, boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }} />
+            {(conversation?.userIsOnline || conversation?.conversationType === TYPE.GROUP) && (
+              <Box sx={{
+                position: 'absolute',
+                bottom: 1,
+                right: 1,
+                width: 12,
+                height: 12,
+                borderRadius: '999px',
+                bgcolor: COLORS.online,
+                border: '2px solid white'
+              }} />
+            )}
+          </Box>
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+            <Typography sx={{ fontWeight: hasUnread ? 700 : 600, fontSize: '18px', color: isSelected ? COLORS.primary : COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{displayName}</Typography>
+            <Typography sx={{ fontSize: '13px', color: COLORS.textMuted, flexShrink: 0 }}>{formatTimeChat(conversation.conversationLastMessageAt)}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: '14px', color: hasUnread ? COLORS.text : COLORS.textSecondary, fontWeight: hasUnread ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+              {conversation.conversationLastSenderId === user?.id ? `Bạn: ${conversation?.conversationLastMessage || 'Đã gửi file'}` : conversation?.conversationLastSenderName === null ? "" : (conversation?.conversationLastSenderName + ': ' + (conversation?.conversationLastMessage || 'Đã gửi file'))}
+            </Typography>
+            {hasUnread && <Badge badgeContent={conversation.conversationUnreadCount} sx={{ '& .MuiBadge-badge': { fontSize: '11px', height: '20px', minWidth: '20px', fontWeight: 700, bgcolor: COLORS.primary, color: COLORS.white, borderRadius: '999px' } }} />}
+          </Box>
+        </Box>
+      </ListItemButton>
+    );
+  };
+
+  const renderConversationSection = (sectionKey, title, items) => {
+    const isCollapsed = collapsedSections[sectionKey];
+
+    return (
+      <Box sx={{ mb: 1 }}>
+        <Box onClick={() => toggleSection(sectionKey)} sx={{ mx: 1.5, px: 1.5, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '16px', cursor: 'pointer', color: COLORS.textSecondary, '&:hover': { bgcolor: COLORS.primaryHover, color: COLORS.primary } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            {isCollapsed ? <KeyboardArrowRight fontSize='small' /> : <KeyboardArrowDown fontSize='small' />}
+            <Typography sx={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{title}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: '12px', fontWeight: 700, color: COLORS.textMuted }}>{items.length}</Typography>
+        </Box>
+        <Collapse in={!isCollapsed} timeout='auto' unmountOnExit>
+          {items.length > 0 ? items.map(renderConversationItem) : <Typography sx={{ px: 3, py: 1.5, color: COLORS.textMuted, fontSize: '13px' }}>Không có cuộc trò chuyện</Typography>}
+        </Collapse>
+      </Box>
+    );
+  };
 
   return (
     <Paper elevation={0} sx={{
@@ -95,8 +156,8 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
             </IconButton>
             <IconButton
               size='small'
-              onClick={() => setUserSearchDialogOpen(true)}
-              sx={{ borderRadius: '12px', bgcolor: COLORS.primaryLight, color: COLORS.primary, '&:hover': { bgcolor: '#E0E7FF' } }}
+              onClick={() => setCreateGroupDialogOpen(true)}
+              sx={{ borderRadius: '12px', color: COLORS.textSecondary, '&:hover': { bgcolor: COLORS.primaryHover, color: COLORS.primary } }}
             >
               <AddCircleOutlineIcon fontSize='small' />
             </IconButton>
@@ -130,135 +191,29 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
         />
       </Box>
 
-      {/* Filter tabs */}
-      <Box sx={{ px: 3, pb: 1.5, display: 'flex', gap: 1, flexShrink: 0 }}>
-        {tabs.map((tab, idx) => (
-          <Box
-            key={idx}
-            onClick={() => setActiveTab(idx)}
-            sx={{
-              px: 1.5,
-              py: 0.5,
-              borderRadius: '999px',
-              fontSize: '13px',
-              fontWeight: activeTab === idx ? 600 : 400,
-              color: activeTab === idx ? COLORS.primary : COLORS.textSecondary,
-              bgcolor: activeTab === idx ? COLORS.primaryLight : 'transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-              '&:hover': { bgcolor: COLORS.primaryHover, color: COLORS.primary }
-            }}
-          >
-            {tab}
-          </Box>
-        ))}
-      </Box>
-
       {/* Conversation list */}
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-        <List sx={{ width: '100%', height: '100%', p: 0, overflow: 'auto' }}>
+        <List
+          sx={{
+            width: '100%',
+            height: '100%',
+            p: 0,
+            overflowY: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+          }}
+        >
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
               <CircularProgress size={28} sx={{ color: COLORS.primary }} />
             </Box>
-          ) : conversations?.map((conversation) => {
-            const isSelected = selectedIndex === conversation.conversationId;
-            const hasUnread = conversation.conversationUnreadCount > 0;
-            const displayName = conversation.conversationType === TYPE.GROUP
-              ? conversation.conversationTitle
-              : conversation.userName;
-            const avatarSrc = conversation.conversationType === TYPE.GROUP
-              ? conversation.conversationAvatar
-              : conversation.userAvatar;
-
-            return (
-              <ListItemButton
-                key={conversation.conversationId}
-                selected={isSelected}
-                onClick={(e) => handleListItemClick(e, conversation.conversationId)}
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  mx: 1.5,
-                  my: 0.5,
-                  borderRadius: '24px',
-                  minHeight: '90px',
-                  alignItems: 'center',
-                  transition: 'all 0.2s ease',
-                  bgcolor: isSelected ? COLORS.primaryLight : 'transparent',
-                  '&:hover': {
-                    bgcolor: isSelected ? COLORS.primaryLight : '#F8F9FF',
-                    transform: 'scale(1.01)',
-                  },
-                  '&.Mui-selected': { bgcolor: COLORS.primaryLight },
-                  '&.Mui-selected:hover': { bgcolor: COLORS.primaryLight },
-                }}
-              >
-                {/* Avatar with online dot */}
-                <Box sx={{ mr: 2, flexShrink: 0 }}>
-                  <Badge anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color="success">
-                    <Avatar
-                      alt={displayName}
-                      src={avatarSrc}
-                      sx={{ width: 56, height: 56, boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
-                    />
-                  </Badge>
-                </Box>
-
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                    <Typography sx={{
-                      fontWeight: hasUnread ? 700 : 600,
-                      fontSize: '18px',
-                      color: isSelected ? COLORS.primary : COLORS.text,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '65%'
-                    }}>
-                      {displayName}
-                    </Typography>
-                    <Typography sx={{ fontSize: '13px', color: COLORS.textMuted, flexShrink: 0 }}>
-                      {formatTimeChat(conversation.conversationLastMessageAt)}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography sx={{
-                      fontSize: '14px',
-                      color: hasUnread ? COLORS.text : COLORS.textSecondary,
-                      fontWeight: hasUnread ? 600 : 400,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '80%'
-                    }}>
-                      {conversation.conversationLastSenderId === user?.id
-                        ? `Bạn: ${conversation.conversationLastMessage}`
-                        : conversation.conversationLastSenderName + ': ' + conversation.conversationLastMessage}
-                    </Typography>
-                    {hasUnread && (
-                      <Badge
-                        badgeContent={conversation.conversationUnreadCount}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            fontSize: '11px',
-                            height: '20px',
-                            minWidth: '20px',
-                            fontWeight: 700,
-                            bgcolor: COLORS.primary,
-                            color: COLORS.white,
-                            borderRadius: '999px',
-                          }
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Box>
-              </ListItemButton>
-            );
-          })}
+          ) : (
+            <>
+              {renderConversationSection('private', 'Private', privateConversations)}
+              {renderConversationSection('group', 'Group', groupConversations)}
+            </>
+          )}
         </List>
       </Box>
 
@@ -289,22 +244,24 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
         >
           <Box sx={{ position: 'relative' }}>
             <Avatar alt={user?.userName} src={user?.avatar} sx={{ width: 40, height: 40 }} />
-            <Box sx={{
-              position: 'absolute',
-              bottom: 1,
-              right: 1,
-              width: 10,
-              height: 10,
-              borderRadius: '999px',
-              bgcolor: COLORS.online,
-              border: '2px solid white'
-            }} />
+            {user?.isOnline && (
+              <Box sx={{
+                position: 'absolute',
+                bottom: 1,
+                right: 1,
+                width: 10,
+                height: 10,
+                borderRadius: '999px',
+                bgcolor: COLORS.online,
+                border: '2px solid white'
+              }} />
+            )}
           </Box>
           <Box>
             <Typography sx={{ fontWeight: 600, fontSize: '15px', color: COLORS.text, lineHeight: 1.2 }}>
               {user?.userName}
             </Typography>
-            <Typography sx={{ fontSize: '12px', color: COLORS.online, fontWeight: 500 }}>Trực tuyến</Typography>
+            {user?.isOnline && <Typography sx={{ fontSize: '12px', color: COLORS.online, fontWeight: 500 }}>Trực tuyến</Typography>}
           </Box>
         </Box>
         <IconButton
@@ -324,7 +281,11 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation }) {
         <FriendsList />
       </Dialog>
       <ProfileModal open={profileDialogOpen} onClose={() => setProfileDialogOpen(false)} user={user} />
-      <UserSearchDialog open={userSearchDialogOpen} onClose={() => setUserSearchDialogOpen(false)} />
+      <CreateGroupConversationDialog
+        open={createGroupDialogOpen}
+        onClose={() => setCreateGroupDialogOpen(false)}
+        onCreate={handleCreateGroupConversation}
+      />
     </Paper>
   )
 }
