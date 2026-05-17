@@ -12,6 +12,8 @@ public interface MessagesService {
 
     MessageResponse createMessage(ChatMessageRequest request);
 
+    MessageResponse editMessage(ChatMessageRequest request);
+
     MessageResponse createRemoveMemberMessage(HandleSocketRequest request);
 
     MessageResponse createLeaveMessage(HandleSocketRequest request);

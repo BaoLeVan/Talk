@@ -48,7 +48,10 @@ public enum ErrorCode {
     FRIEND_REQUEST_ALREADY_SENT(1203, "Friend request already sent", HttpStatus.BAD_REQUEST),
     FRIEND_REQUEST_NOT_FOUND(1204, "Friend request not found", HttpStatus.NOT_FOUND),
     FRIEND_REQUEST_ALREADY_PROCESSED(1205, "Friend request already processed", HttpStatus.BAD_REQUEST),
-    FRIEND_REQUEST_NOT_BELONG_TO_USER(1206, "Friend request not belong to user", HttpStatus.BAD_REQUEST);
+    FRIEND_REQUEST_NOT_BELONG_TO_USER(1206, "Friend request not belong to user", HttpStatus.BAD_REQUEST),
+
+    //Message
+    MESSAGE_NOT_FOUND(1300, "Message not found", HttpStatus.NOT_FOUND);
 
     int code;
     String message;

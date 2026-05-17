@@ -36,9 +36,15 @@ public class MessageMessagingController {
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload ChatMessageRequest request) {
-        log.info("Received message from {}: {}", request.getSenderId(), request.getContent());
-
+        log.info("Received create message from {}: {}", request.getSenderId(), request.getContent());
         MessageResponse response = messagesService.createMessage(request);
+        messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
+    }
+
+    @MessageMapping("/chat.editMessage")
+    public void editMessage(@Payload ChatMessageRequest request) {
+        log.info("Received edit message from {}: {}", request.getSenderId(), request.getContent());
+        MessageResponse response = messagesService.editMessage(request);
         messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
     }
 

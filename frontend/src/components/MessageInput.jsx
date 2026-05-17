@@ -1,5 +1,5 @@
-import { Box, FormControl, IconButton, Input, Typography } from '@mui/material'
-import React, { useCallback, useRef, useState } from 'react'
+﻿import { Box, FormControl, IconButton, Input, Typography } from '@mui/material'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SentimentSatisfiedIcon from '@mui/icons-material/SentimentSatisfied';
 import SendIcon from '@mui/icons-material/Send';
@@ -12,6 +12,8 @@ import { acceptFilesValidator } from '~/utils/common';
 import { toast } from 'react-toastify';
 import { useUser } from './context/UserContext';
 import { uploadFile } from '~/apis/attachmentApi';
+import { useChatStore } from '~/store/useChatStore';
+import { Message } from '@mui/icons-material';
 
 function MessageInput({ conversation, sendMessage }) {
   const [message, setMessage] = useState('');
@@ -20,6 +22,19 @@ function MessageInput({ conversation, sendMessage }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef(null);
   const { user } = useUser();
+  const { editingMessage, clearEditingMessage, updateMessageLocally } = useChatStore();
+
+  useEffect(() => {
+    if (!editingMessage) return;
+
+    setMessage(editingMessage.content || '');
+    setFiles([]);
+    setShowEmojiPicker(false);
+
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }, [editingMessage]);
 
   const onDrop = useCallback((acceptedFiles) => {
     for (const acceptedFile of acceptedFiles) {
@@ -40,6 +55,13 @@ function MessageInput({ conversation, sendMessage }) {
 
   const handleRemoveFile = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
+    inputRef.current?.focus();
+  };
+
+  const handleCancelEdit = () => {
+    clearEditingMessage();
+    setMessage('');
+    setFiles([]);
     inputRef.current?.focus();
   };
 
@@ -67,7 +89,22 @@ function MessageInput({ conversation, sendMessage }) {
   const { handleSubmit } = useForm()
 
   const handleSend = async () => {
-    if (!conversation || !user || (!message && files.length === 0)) return;
+    if (!conversation || !user) return;
+
+    if (editingMessage) {
+      updateMessageLocally(editingMessage.id, message.trim());
+      sendMessage('/app/chat.editMessage', {
+        idMessage: editingMessage.id,
+        senderId: user.id,
+        conversationId: conversation.conversationId,
+        content: message
+      })
+      clearEditingMessage();
+      setMessage('')
+      return;
+    }
+
+    if (!message && files.length === 0) return;
 
     try {
       setUploading(true);
@@ -77,7 +114,7 @@ function MessageInput({ conversation, sendMessage }) {
         senderId: user.id,
         conversationId: conversation.conversationId,
         content: message,
-        messageType: 'CHAT',
+        messageType: 'EDIT',
         attachments
       })
 
@@ -157,6 +194,32 @@ function MessageInput({ conversation, sendMessage }) {
                   boxShadow: '0 0 0 3px rgba(91,103,255,0.08)'
                 }
               }}>
+                {editingMessage && (
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: '16px',
+                    bgcolor: '#EEF2FF',
+                    border: '1px solid #DCE4FF'
+                  }}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#5B67FF' }}>
+                        Ðang chỉnh sửa tin nhắn
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.78rem', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {editingMessage.content}
+                      </Typography>
+                    </Box>
+                    <IconButton size='small' onClick={handleCancelEdit} sx={{ color: '#6B7280' }}>
+                      <CloseIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                )}
+
                 {files.length > 0 && (
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {files.map((fileItem, index) => (
@@ -208,7 +271,7 @@ function MessageInput({ conversation, sendMessage }) {
 
                 <Input
                   ref={inputRef}
-                  placeholder='Type a message...'
+                  placeholder={editingMessage ? 'Chỉnh sửa tin nhắn...' : 'Type a message...'}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   sx={{

@@ -7,8 +7,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +57,7 @@ public class MessagesServiceImpl implements MessagesService {
         ConversationsMembersRepository conversationsMembersRepository;
         AttachmentRepository attachmentRepository;
         StatusUserInConvRedisService statusUserInConvRedisService;
+        MongoTemplate mongoTemplate;
 
         @Override
         public MessageResponse createMessage(ChatMessageRequest request) {
@@ -230,6 +237,25 @@ public class MessagesServiceImpl implements MessagesService {
         public void markRead(Long conversationId, String lastReadMessageId, Long userId) {
                 statusUserInConvRedisService.setMemberInConv(conversationId, userId);
                 statusUserInConvRedisService.setUserActiveInConv(userId, conversationId);
-                conversationsMembersRepository.updateLastReadMessageIdAndCountUnread(conversationId, userId, lastReadMessageId);
+                conversationsMembersRepository.updateLastReadMessageIdAndCountUnread(conversationId, userId,
+                                lastReadMessageId);
+        }
+
+        @Override
+        public MessageResponse editMessage(ChatMessageRequest request) {
+                Query query = Query.query(
+                                Criteria.where("_id").is(new ObjectId(request.getIdMessage())));
+                Update update = Update.update("content", request.getContent())
+                                .set("updatedAt", LocalDateTime.now())
+                                .set("status", MessageStatus.EDITED);
+
+                Message message = mongoTemplate.findAndModify(query, update,
+                                FindAndModifyOptions.options().returnNew(true), Message.class);
+                if (message == null) {
+                        throw new AppException(ErrorCode.MESSAGE_NOT_FOUND);
+                }
+                User user = userRepository.findById(request.getSenderId())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                return messageMapper.toMessageResponse(message, user);
         }
 }
