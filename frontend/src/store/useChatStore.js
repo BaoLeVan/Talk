@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { getAllConversationsByUser } from '~/apis';
 
 export const useChatStore = create((set) => ({
@@ -7,15 +7,32 @@ export const useChatStore = create((set) => ({
     conversations: [],
     isLoading: false,
     currentConversationId: null,
+    editingMessage: null,
 
     setMembers: (members) => set({ members }),
     setMessages: (messages) => set({ messages }),
     setConversations: (conversations) => set({ conversations }),
     setIsLoading: (isLoading) => set({ isLoading }),
     setCurrentConversationId: (id) => set({ currentConversationId: id }),
+    setEditingMessage: (message) => set({ editingMessage: message }),
+    clearEditingMessage: () => set({ editingMessage: null }),
 
     addMessage: (msg) =>
         set(state => ({ messages: [...state.messages, msg] })),
+
+    updateMessageLocally: (messageId, content) =>
+        set((state) => ({
+            messages: state.messages.map((message) =>
+                message.id === messageId
+                    ? {
+                        ...message,
+                        content,
+                        updateAt: new Date().toISOString(),
+                    }
+                    : message
+            ),
+            editingMessage: null,
+        })),
 
     removeMember: (userId) =>
         set((state) => ({
@@ -33,6 +50,7 @@ export const useChatStore = create((set) => ({
         set(state => ({
             conversations: state.conversations.map(conv => {
                 if (conv.conversationId !== conversationId) return conv;
+                if(newMessage.status === 'EDITED') return conv;
                 const updated = { ...conv };
                 updated.conversationLastSenderId = newMessage.user.id;
                 updated.conversationLastSenderName = newMessage.user.userName;
@@ -41,7 +59,8 @@ export const useChatStore = create((set) => ({
                 if (
                     !isCurrentConversation &&
                     newMessage.senderId !== currentUserId &&
-                    newMessage.messageType !== 'SYSTEM'
+                    newMessage.messageType !== 'SYSTEM' &&
+                    newMessage.status !== 'EDITED'
                 ) {
                     updated.conversationUnreadCount = (updated.conversationUnreadCount || 0) + 1;
                 }

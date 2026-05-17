@@ -1,22 +1,61 @@
-import React, { useState } from 'react'
+﻿import React, { useMemo, useState } from 'react'
 import { Box, Typography, Avatar, Dialog, IconButton, Tooltip } from '@mui/material'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import ReplyIcon from '@mui/icons-material/Reply';
+import AddReactionOutlinedIcon from '@mui/icons-material/AddReactionOutlined';
 import { useChatStore } from '~/store/useChatStore';
 
 function MessageItem() {
-  const { messages } = useChatStore();
+  const { messages, setEditingMessage } = useChatStore();
   const [previewMedia, setPreviewMedia] = useState(null);
+
+  const sortedMessages = useMemo(() => messages ?? [], [messages]);
 
   return (
     <>
-      {messages?.map((item, index) => {
+      {sortedMessages.map((item, index) => {
         const isSystemMessage = item.messageType === 'SYSTEM';
+
+        const actionButtons = item.isOwnMessage ? [
+          {
+            key: 'edit',
+            title: 'Chỉnh sửa',
+            icon: <EditIcon sx={{ fontSize: 18 }} />,
+            onClick: () => setEditingMessage(item)
+          },
+          {
+            key: 'reaction',
+            title: 'Thả icon',
+            icon: <AddReactionOutlinedIcon sx={{ fontSize: 18 }} />,
+            onClick: () => { }
+          },
+          {
+            key: 'reply',
+            title: 'Trả lời',
+            icon: <ReplyIcon sx={{ fontSize: 18 }} />,
+            onClick: () => { }
+          }
+        ] : [
+          {
+            key: 'reply',
+            title: 'Trả lời',
+            icon: <ReplyIcon sx={{ fontSize: 18 }} />,
+            onClick: () => { }
+          },
+          {
+            key: 'reaction',
+            title: 'Thả icon',
+            icon: <AddReactionOutlinedIcon sx={{ fontSize: 18 }} />,
+            onClick: () => { }
+          }
+        ];
 
         return (
           <Box
-            key={index}
+            key={item.id ?? index}
             sx={{
               display: 'flex',
               flexDirection: isSystemMessage ? 'row' : item.isOwnMessage ? 'row-reverse' : 'row',
@@ -174,24 +213,76 @@ function MessageItem() {
                 )}
 
                 {item.content && (
-                  <Box sx={{
-                    py: isSystemMessage ? 0.5 : 1.5,
-                    px: isSystemMessage ? 1.5 : 2.5,
-                    bgcolor: isSystemMessage ? 'transparent' : item.isOwnMessage ? 'transparent' : '#FFFFFF',
-                    background: isSystemMessage ? 'transparent' : item.isOwnMessage ? 'linear-gradient(135deg, #6EA8FE 0%, #5B67FF 50%, #7C5CFF 100%)' : '#FFFFFF',
-                    color: isSystemMessage ? '#6B7280' : item.isOwnMessage ? 'white' : '#111827',
-                    borderRadius: isSystemMessage ? '8px' : '24px',
-                    wordWrap: 'break-word',
-                    boxShadow: isSystemMessage ? 'none' : '0 10px 30px rgba(0,0,0,0.05)',
-                    maxWidth: '100%',
-                    fontStyle: isSystemMessage ? 'italic' : 'normal',
-                    border: isSystemMessage ? 'none' : item.isOwnMessage ? 'none' : '1px solid #EEF2FF'
-                  }}>
-                    <Tooltip title={item.time} placement='left' arrow>
-                      <Typography variant='body1' sx={{ fontSize: isSystemMessage ? '0.8125rem' : '0.9375rem', lineHeight: 1.5 }}>
-                        {item.content}
-                      </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: item.isOwnMessage ? 'row-reverse' : 'row',
+                      alignItems: 'center',
+                      gap: 1,
+                      '&:hover .message-actions': {
+                        opacity: 1,
+                        visibility: 'visible',
+                        transform: 'translateY(0)'
+                      }
+                    }}
+                  >
+                    <Tooltip title={item.updateAt} placement='right' arrow>
+                      <Box sx={{
+                        py: isSystemMessage ? 0.5 : 1.5,
+                        px: isSystemMessage ? 1.5 : 2.5,
+                        bgcolor: isSystemMessage ? 'transparent' : item.isOwnMessage ? 'transparent' : '#FFFFFF',
+                        background: isSystemMessage ? 'transparent' : item.isOwnMessage ? 'linear-gradient(135deg, #6EA8FE 0%, #5B67FF 50%, #7C5CFF 100%)' : '#FFFFFF',
+                        color: isSystemMessage ? '#6B7280' : item.isOwnMessage ? 'white' : '#111827',
+                        borderRadius: isSystemMessage ? '8px' : '24px',
+                        wordWrap: 'break-word',
+                        boxShadow: isSystemMessage ? 'none' : '0 10px 30px rgba(0,0,0,0.05)',
+                        maxWidth: '100%',
+                        fontStyle: isSystemMessage ? 'italic' : 'normal',
+                        border: isSystemMessage ? 'none' : item.isOwnMessage ? 'none' : '1px solid #EEF2FF'
+                      }}>
+                        <Typography variant='body1' sx={{ fontSize: isSystemMessage ? '0.8125rem' : '0.9375rem', lineHeight: 1.5 }}>
+                          {item.content}
+                        </Typography>
+                      </Box>
                     </Tooltip>
+                    {!isSystemMessage && (
+                      <Box
+                        className='message-actions'
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          opacity: 0,
+                          visibility: 'hidden',
+                          transform: 'translateY(4px)',
+                          transition: 'all 0.18s ease',
+                          bgcolor: '#FFFFFF',
+                          border: '1px solid #EEF2FF',
+                          borderRadius: '999px',
+                          boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                          px: 0.5,
+                          py: 0.25,
+                        }}
+                      >
+                        {actionButtons.map((action) => (
+                          <Tooltip key={action.key} title={action.title} arrow>
+                            <IconButton
+                              size='small'
+                              onClick={action.onClick}
+                              sx={{
+                                color: '#6B7280',
+                                '&:hover': {
+                                  color: '#5B67FF',
+                                  bgcolor: '#F1F3FF'
+                                }
+                              }}
+                            >
+                              {action.icon}
+                            </IconButton>
+                          </Tooltip>
+                        ))}
+                      </Box>
+                    )}
                   </Box>
                 )}
               </Box>

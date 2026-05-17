@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
@@ -12,7 +12,7 @@ import { COLORS } from '~/utils/common'
 
 function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
   const { user } = useUser();
-  const { messages, setMessages, markConversationRead, setCurrentConversationId } = useChatStore();
+  const { messages, setMessages, markConversationRead, setCurrentConversationId, clearEditingMessage } = useChatStore();
   const { sendMessage } = useStomp();
   const messagesContainerRef = useRef(null);
   const isLoadingOlderRef = useRef(false);
@@ -25,8 +25,9 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
   const mapMessages = useCallback((rawMessages = []) => rawMessages.map((message) => {
     const isSystemMessage = message?.messageType === 'SYSTEM';
     return {
+      id: message?.idMessage,
       content: message?.content,
-      time: moment(message?.updatedAt).format('dddd h:mm A'),
+      updateAt: moment(message?.updatedAt).format('dddd h:mm A'),
       isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
       senderName: isSystemMessage ? null : message?.user?.userName,
       avatar: isSystemMessage ? null : message?.user?.avatar,
@@ -48,6 +49,10 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
     setCurrentConversationId(conversation?.conversationId ?? null);
     return () => setCurrentConversationId(null);
   }, [conversation?.conversationId, setCurrentConversationId]);
+
+  useEffect(() => {
+    clearEditingMessage();
+  }, [conversation?.conversationId, clearEditingMessage]);
 
   useEffect(() => {
     if (!conversation?.conversationId) {

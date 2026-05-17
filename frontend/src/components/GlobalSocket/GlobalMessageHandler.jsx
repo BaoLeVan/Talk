@@ -27,10 +27,10 @@ export default function GlobalMessageHandler() {
           user?.id
         );
 
-        if (isCurrent && message.messageType !== 'SYSTEM') {
+        if (isCurrent && message.messageType !== 'SYSTEM' && message.status !== 'EDITED') {
           addMessage({
             content: message?.content,
-            time: new Date(message?.createdAt || message?.timestamp).toLocaleString(),
+            updateAt: new Date(message?.createdAt || message?.timestamp).toLocaleString(),
             isOwnMessage: message?.user?.id === user?.id,
             senderName: message?.user?.userName,
             avatar: message?.user?.avatar,

@@ -4,19 +4,23 @@ import java.util.List;
 
 import com.talktalk.model.document.Attachment;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChatMessageRequest {
-    private Long senderId;
-    private Long conversationId;
-    private String content;
-    private String messageType;
-    private List<Attachment> attachments;
+    String idMessage;
+    Long senderId;
+    Long conversationId;
+    String content;
+    String messageType;
+    List<Attachment> attachments;
 }
