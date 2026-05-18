@@ -5,4 +5,5 @@ public enum MessageStatus {
     DELIVERED,
     SEEN,
     EDITED,
+    REACTED,
 }

@@ -1,5 +1,5 @@
-﻿import React, { useMemo, useState } from 'react'
-import { Box, Typography, Avatar, Dialog, IconButton, Tooltip } from '@mui/material'
+import React, { useMemo, useState, useRef } from 'react'
+import { Box, Typography, Avatar, Dialog, IconButton, Tooltip, Popper, Paper, ClickAwayListener } from '@mui/material'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CloseIcon from '@mui/icons-material/Close';
@@ -7,12 +7,141 @@ import EditIcon from '@mui/icons-material/Edit';
 import ReplyIcon from '@mui/icons-material/Reply';
 import AddReactionOutlinedIcon from '@mui/icons-material/AddReactionOutlined';
 import { useChatStore } from '~/store/useChatStore';
+import { useStomp } from '~/components/context/StompContext';
+import { useUser } from '~/components/context/UserContext';
+
+const EMOJI_LIST = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '👏'];
+
+function ReactionBar({ reactions, messageId, conversationId }) {
+  if (!reactions || reactions.length === 0) return null;
+
+  // gom nhóm theo icon
+  const grouped = reactions.reduce((acc, r) => {
+    if (!acc[r.icon]) acc[r.icon] = [];
+    acc[r.icon].push(r.userName || 'Unknown');
+    return acc;
+  }, {});
+
+  return (
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+      {Object.entries(grouped).map(([icon, names]) => (
+        <Tooltip
+          key={icon}
+          title={
+            <Box>
+              {names.map((name, i) => (
+                <Typography key={i} variant='caption' sx={{ display: 'block', fontSize: '0.75rem' }}>
+                  {name}
+                </Typography>
+              ))}
+            </Box>
+          }
+          arrow
+          placement='top'
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.4,
+              px: 0.8,
+              py: 0.3,
+              borderRadius: '999px',
+              bgcolor: '#F1F3FF',
+              border: '1px solid #E0E4FF',
+              cursor: 'default',
+              fontSize: '0.85rem',
+              lineHeight: 1,
+              userSelect: 'none',
+            }}
+          >
+            <span>{icon}</span>
+            {names.length > 1 && (
+              <Typography variant='caption' sx={{ fontSize: '0.72rem', color: '#5B67FF', fontWeight: 600 }}>
+                {names.length}
+              </Typography>
+            )}
+          </Box>
+        </Tooltip>
+      ))}
+    </Box>
+  );
+}
+
+function EmojiPicker({ anchorEl, open, onClose, onSelect }) {
+  return (
+    <Popper open={open} anchorEl={anchorEl} placement='top' style={{ zIndex: 1300 }}>
+      <ClickAwayListener onClickAway={onClose}>
+        <Paper
+          elevation={4}
+          sx={{
+            display: 'flex',
+            gap: 0.5,
+            p: 0.75,
+            borderRadius: '999px',
+            border: '1px solid #EEF2FF',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          }}
+        >
+          {EMOJI_LIST.map((emoji) => (
+            <Box
+              key={emoji}
+              onClick={() => onSelect(emoji)}
+              sx={{
+                fontSize: '1.4rem',
+                cursor: 'pointer',
+                borderRadius: '50%',
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'transform 0.15s',
+                '&:hover': { transform: 'scale(1.3)', bgcolor: '#F1F3FF' },
+              }}
+            >
+              {emoji}
+            </Box>
+          ))}
+        </Paper>
+      </ClickAwayListener>
+    </Popper>
+  );
+}
 
 function MessageItem() {
   const { messages, setEditingMessage } = useChatStore();
+  const { sendMessage } = useStomp();
+  const { user } = useUser();
   const [previewMedia, setPreviewMedia] = useState(null);
+  const [pickerAnchor, setPickerAnchor] = useState(null);
+  const [pickerMessageId, setPickerMessageId] = useState(null);
+  const [pickerConversationId, setPickerConversationId] = useState(null);
 
   const sortedMessages = useMemo(() => messages ?? [], [messages]);
+
+  const handleOpenPicker = (e, messageId, conversationId) => {
+    setPickerAnchor(e.currentTarget);
+    setPickerMessageId(messageId);
+    setPickerConversationId(conversationId);
+  };
+
+  const handleClosePicker = () => {
+    setPickerAnchor(null);
+    setPickerMessageId(null);
+    setPickerConversationId(null);
+  };
+
+  const handleSelectEmoji = (emoji) => {
+    if (!pickerMessageId || !pickerConversationId || !user?.id) return;
+    sendMessage('/app/chat.reactMessage', {
+      messageId: pickerMessageId,
+      conversationId: pickerConversationId,
+      userId: user.id,
+      icon: emoji,
+    });
+    handleClosePicker();
+  };
 
   return (
     <>
@@ -30,7 +159,7 @@ function MessageItem() {
             key: 'reaction',
             title: 'Thả icon',
             icon: <AddReactionOutlinedIcon sx={{ fontSize: 18 }} />,
-            onClick: () => { }
+            onClick: (e) => handleOpenPicker(e, item.id, item.conversationId)
           },
           {
             key: 'reply',
@@ -49,7 +178,7 @@ function MessageItem() {
             key: 'reaction',
             title: 'Thả icon',
             icon: <AddReactionOutlinedIcon sx={{ fontSize: 18 }} />,
-            onClick: () => { }
+            onClick: (e) => handleOpenPicker(e, item.id, item.conversationId)
           }
         ];
 
@@ -285,6 +414,14 @@ function MessageItem() {
                     )}
                   </Box>
                 )}
+
+                {!isSystemMessage && (
+                  <ReactionBar
+                    reactions={item.reactions}
+                    messageId={item.id}
+                    conversationId={item.conversationId}
+                  />
+                )}
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 0.5, px: 1 }}>
@@ -296,6 +433,13 @@ function MessageItem() {
           </Box>
         );
       })}
+
+      <EmojiPicker
+        anchorEl={pickerAnchor}
+        open={Boolean(pickerAnchor)}
+        onClose={handleClosePicker}
+        onSelect={handleSelectEmoji}
+      />
 
       <Dialog
         open={!!previewMedia}

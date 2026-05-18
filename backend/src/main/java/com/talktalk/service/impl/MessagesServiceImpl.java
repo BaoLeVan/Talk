@@ -1,7 +1,9 @@
 package com.talktalk.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import com.talktalk.dto.common.CreateMessageCommand;
 import com.talktalk.dto.request.ChatMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
+import com.talktalk.dto.request.ReactionRequest;
 import com.talktalk.dto.response.MessagePageResponse;
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.exception.AppException;
@@ -31,6 +34,7 @@ import com.talktalk.exception.enums.MessageType;
 import com.talktalk.mapper.MessageMapper;
 import com.talktalk.model.document.Attachment;
 import com.talktalk.model.document.Message;
+import com.talktalk.model.document.MessageReaction;
 import com.talktalk.model.entity.Conversations;
 import com.talktalk.model.entity.User;
 import com.talktalk.repository.jpa.ConversationsMembersRepository;
@@ -208,20 +212,30 @@ public class MessagesServiceImpl implements MessagesService {
 
                 Collections.reverse(messages);
 
-                Set<Long> userIds = messages.stream()
+                Set<Long> senderIds = messages.stream()
                                 .map(Message::getSenderId)
                                 .collect(Collectors.toSet());
-                Map<Long, User> userMap = userRepository.findAllById(userIds)
-                                .stream()
-                                .collect(Collectors.toMap(User::getId, user -> user));
 
-                // get user in messages
+                Set<Long> reactionUserIds = messages.stream()
+                                .filter(m -> m.getReactions() != null)
+                                .flatMap(m -> m.getReactions().stream())
+                                .map(MessageReaction::getUserId)
+                                .collect(Collectors.toSet());
+
+                Set<Long> allUserIds = new HashSet<>(senderIds);
+                allUserIds.addAll(reactionUserIds);
+
+                Map<Long, User> userMap = userRepository.findAllById(allUserIds)
+                                .stream()
+                                .collect(Collectors.toMap(User::getId, u -> u));
+
                 List<MessageResponse> response = messages.stream()
-                                .map(message -> messageMapper.toMessageResponse(message,
-                                                userMap.get(message.getSenderId())))
+                                .map(message -> messageMapper.toMessageResponse(
+                                                message,
+                                                userMap.get(message.getSenderId()),
+                                                userMap))
                                 .toList();
 
-                // cursor mới = tin nhắn cũ nhất trong batch
                 LocalDateTime nextCursor = messages.isEmpty()
                                 ? null
                                 : messages.get(0).getCreatedAt();
@@ -257,5 +271,45 @@ public class MessagesServiceImpl implements MessagesService {
                 User user = userRepository.findById(request.getSenderId())
                                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
                 return messageMapper.toMessageResponse(message, user);
+        }
+
+        @Override
+        public MessageResponse reactToMessage(ReactionRequest request) {
+                Message message = messagesRepository.findById(request.getMessageId())
+                                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
+
+                List<MessageReaction> reactions = message.getReactions() == null
+                                ? new ArrayList<>()
+                                : new ArrayList<>(message.getReactions());
+
+                // toggle: nếu user đã thả đúng icon này → bỏ; nếu thả icon khác → thay; nếu chưa → thêm
+                boolean removed = reactions.removeIf(r -> r.getUserId().equals(request.getUserId())
+                                && r.getIcon().equals(request.getIcon()));
+
+                if (!removed) {
+                        // xóa reaction cũ của user (nếu có icon khác) rồi thêm mới
+                        reactions.removeIf(r -> r.getUserId().equals(request.getUserId()));
+                        reactions.add(MessageReaction.builder()
+                                        .userId(request.getUserId())
+                                        .icon(request.getIcon())
+                                        .build());
+                }
+
+                message.setReactions(reactions);
+                Message saved = messagesRepository.save(message);
+                saved.setStatus(MessageStatus.REACTED);
+
+                Set<Long> allUserIds = new HashSet<>();
+                if (saved.getSenderId() != null) allUserIds.add(saved.getSenderId());
+                if (saved.getReactions() != null) {
+                        saved.getReactions().forEach(r -> allUserIds.add(r.getUserId()));
+                }
+
+                Map<Long, User> userMap = userRepository.findAllById(allUserIds)
+                                .stream()
+                                .collect(Collectors.toMap(User::getId, u -> u));
+
+                User sender = userMap.get(saved.getSenderId());
+                return messageMapper.toMessageResponse(saved, sender, userMap);
         }
 }

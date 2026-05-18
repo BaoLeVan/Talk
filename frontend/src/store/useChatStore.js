@@ -34,6 +34,15 @@ export const useChatStore = create((set) => ({
             editingMessage: null,
         })),
 
+    updateMessageReactions: (messageId, reactions) =>
+        set((state) => ({
+            messages: state.messages.map((message) =>
+                message.id === messageId
+                    ? { ...message, reactions }
+                    : message
+            ),
+        })),
+
     removeMember: (userId) =>
         set((state) => ({
             members: state.members.filter(u => u.id !== userId)
