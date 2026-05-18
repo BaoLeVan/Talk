@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import com.talktalk.dto.request.ChatMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
 import com.talktalk.dto.request.ReadReceiptRequest;
+import com.talktalk.dto.request.ReactionRequest;
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.dto.response.ReadReceiptResponse;
 import com.talktalk.dto.response.RoleUserInConversation;
@@ -93,5 +94,12 @@ public class MessageMessagingController {
                 .lastReadMessageId(request.getLastReadMessageId())
                 .build();
         messagingTemplate.convertAndSend("/topic/room." + request.getConversationId() + ".read", receipt);
+    }
+
+    @MessageMapping("/chat.reactMessage")
+    public void reactMessage(@Payload ReactionRequest request) {
+        log.info("React to message: {}, user: {}, icon: {}", request.getMessageId(), request.getUserId(), request.getIcon());
+        MessageResponse response = messagesService.reactToMessage(request);
+        messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
     }
 }

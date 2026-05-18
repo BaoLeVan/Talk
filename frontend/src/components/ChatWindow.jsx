@@ -26,6 +26,7 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
     const isSystemMessage = message?.messageType === 'SYSTEM';
     return {
       id: message?.idMessage,
+      conversationId: message?.conversationId,
       content: message?.content,
       updateAt: moment(message?.updatedAt).format('dddd h:mm A'),
       isOwnMessage: isSystemMessage ? false : message?.user?.id === user?.id,
@@ -34,7 +35,8 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
       status: message?.status?.toLowerCase(),
       attachments: message?.attachments || [],
       messageType: message?.messageType,
-      action: message?.action
+      action: message?.action,
+      reactions: message?.reactions || [],
     };
   }), [user?.id]);
 

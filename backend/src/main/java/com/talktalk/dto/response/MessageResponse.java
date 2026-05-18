@@ -30,6 +30,7 @@ public class MessageResponse {
     LocalDateTime editedAt;
     LocalDateTime deletedAt;
     List<AttachmentResponse> attachments;
+    List<MessageReactionResponse> reactions;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }

@@ -38,4 +38,5 @@ public class Message extends BaseEntity {
     MessageStatus status;
     LocalDateTime deletedAt;
     List<Attachment> attachments;
+    List<MessageReaction> reactions;
 }

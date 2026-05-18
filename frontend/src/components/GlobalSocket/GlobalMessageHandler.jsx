@@ -5,14 +5,13 @@ import { useUser } from '../context/UserContext';
 
 export default function GlobalMessageHandler() {
   const { connected, subscribe, unsubscribe } = useStomp();
-  const { conversations, currentConversationId, updateConversationOnNewMessage, addMessage } = useChatStore();
+  const { conversations, currentConversationId, updateConversationOnNewMessage, addMessage, updateMessageReactions } = useChatStore();
   const { user } = useUser();
   const subscriptionsRef = useRef(new Map());
 
   useEffect(() => {
     if (!connected || !conversations.length) return;
 
-    // Subscribe to all conversation rooms
     conversations.forEach(conv => {
       const topic = `/topic/room.${conv.conversationId}`;
       if (subscriptionsRef.current.has(topic)) return;
@@ -20,6 +19,15 @@ export default function GlobalMessageHandler() {
       const callback = (data) => {
         const message = JSON.parse(data.body);
         const isCurrent = currentConversationId === conv.conversationId;
+
+        // reaction update — chỉ cập nhật reactions, không thêm message mới
+        if (message.status === 'REACTED') {
+          if (isCurrent) {
+            updateMessageReactions(message.idMessage, message.reactions || []);
+          }
+          return;
+        }
+
         updateConversationOnNewMessage(
           conv.conversationId,
           message,
@@ -29,6 +37,8 @@ export default function GlobalMessageHandler() {
 
         if (isCurrent && message.messageType !== 'SYSTEM' && message.status !== 'EDITED') {
           addMessage({
+            id: message?.idMessage,
+            conversationId: message?.conversationId,
             content: message?.content,
             updateAt: new Date(message?.createdAt || message?.timestamp).toLocaleString(),
             isOwnMessage: message?.user?.id === user?.id,
@@ -37,7 +47,8 @@ export default function GlobalMessageHandler() {
             status: message?.status?.toLowerCase(),
             attachments: message?.attachments || [],
             messageType: message?.messageType,
-            action: message?.action
+            action: message?.action,
+            reactions: message?.reactions || [],
           });
         }
       };
@@ -46,14 +57,13 @@ export default function GlobalMessageHandler() {
       subscriptionsRef.current.set(topic, callback);
     });
 
-    // Cleanup: unsubscribe from rooms that are no longer in conversations
     return () => {
-      subscriptionsRef.current.forEach((callback, topic) => {
+      subscriptionsRef.current.forEach((_, topic) => {
         unsubscribe(topic);
       });
       subscriptionsRef.current.clear();
     };
-  }, [connected, conversations, currentConversationId, user?.id, updateConversationOnNewMessage, addMessage, subscribe, unsubscribe]);
+  }, [connected, conversations, currentConversationId, user?.id, updateConversationOnNewMessage, addMessage, updateMessageReactions, subscribe, unsubscribe]);
 
   return null;
 }
