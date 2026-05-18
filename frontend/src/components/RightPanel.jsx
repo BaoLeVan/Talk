@@ -1,5 +1,25 @@
-import { Avatar, Box, Paper, Typography, List, ListItem, ListItemAvatar, ListItemText, Badge, Switch, Button, IconButton, ListItemButton } from '@mui/material'
-import React, { useState } from 'react'
+﻿import {
+    Avatar,
+    Box,
+    Paper,
+    Typography,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    Badge,
+    Switch,
+    Button,
+    IconButton,
+    ListItemButton,
+    Tabs,
+    Tab,
+    ImageList,
+    ImageListItem,
+    CircularProgress,
+    Dialog,
+} from '@mui/material'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ShieldIcon from '@mui/icons-material/Shield';
 import { styled } from '@mui/material/styles';
@@ -9,11 +29,10 @@ import DialogConfirm from './Form/DialogConfirm';
 import DialogAddMembers from './Form/DialogAddMembers';
 import { useUser } from './context/UserContext';
 import { TYPE } from '~/utils/constants';
-import { deleteGroupConversation } from '~/apis';
+import { deleteGroupConversation, getConversationMedia } from '~/apis';
 import { toast } from 'react-toastify';
 import { useChatStore } from '~/store/useChatStore';
 import { useStomp } from '~/components/context/StompContext';
-
 
 function RightPanel({ conversation, onDeleteConversation }) {
     const [userDelete, setUserDelete] = useState(null);
@@ -21,24 +40,32 @@ function RightPanel({ conversation, onDeleteConversation }) {
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
     const [openDeleteGroupDialog, setOpenDeleteGroupDialog] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
+    const [mediaItems, setMediaItems] = useState([]);
+    const [mediaCursor, setMediaCursor] = useState(null);
+    const [mediaHasNext, setMediaHasNext] = useState(false);
+    const [mediaLoading, setMediaLoading] = useState(false);
+    const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
+
+    const mediaLoadingRef = useRef(false);
 
     const { user } = useUser();
     const { members } = useChatStore();
     const { sendMessage } = useStomp();
 
-
     const handleListItemClick = (event, index) => {
         setSelectedIndex(index);
     }
 
-    const handleDelete = (userDelete) => {
+    const handleDelete = (targetUser) => {
         setOpenDialog(true)
-        setUserDelete(userDelete)
+        setUserDelete(targetUser)
     }
 
     const deleteUser = (userDeleteId, userDeleteName, conversationId) => {
         sendMessage(`/app/chat.deleteUser`, {
-            conversationId: conversationId,
+            conversationId,
             userId: user?.id,
             userTargetIds: [userDeleteId],
             userTargetNames: [userDeleteName]
@@ -47,7 +74,7 @@ function RightPanel({ conversation, onDeleteConversation }) {
 
     const leaveGroup = (conversationId) => {
         sendMessage(`/app/chat.leaveGroup`, {
-            conversationId: conversationId,
+            conversationId,
             userId: user?.id
         })
     }
@@ -69,10 +96,61 @@ function RightPanel({ conversation, onDeleteConversation }) {
         sendMessage(`/app/chat.addUser`, {
             conversationId: conversation?.conversationId,
             userId: user?.id,
-            userTargetIds: userTargetIds,
-            userTargetNames: userTargetNames
+            userTargetIds,
+            userTargetNames
         });
     }
+
+    const loadMedia = useCallback(async ({ cursor = null, append = false } = {}) => {
+        if (!conversation?.conversationId || mediaLoadingRef.current) return;
+
+        mediaLoadingRef.current = true;
+        if (append) setMediaLoadingMore(true);
+        else setMediaLoading(true);
+
+        try {
+            const result = await getConversationMedia({
+                conversationId: conversation.conversationId,
+                cursor,
+                size: 20,
+            });
+
+            const items = result?.data?.items || [];
+            setMediaItems(prev => append ? [...prev, ...items] : items);
+            setMediaCursor(result?.data?.nextCursor || null);
+            setMediaHasNext(Boolean(result?.data?.hasNext));
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Load media failed');
+        } finally {
+            mediaLoadingRef.current = false;
+            setMediaLoading(false);
+            setMediaLoadingMore(false);
+        }
+    }, [conversation?.conversationId]);
+
+    useEffect(() => {
+        setActiveTab(0);
+        setMediaItems([]);
+        setMediaCursor(null);
+        setMediaHasNext(false);
+        setMediaLoading(false);
+        setMediaLoadingMore(false);
+        mediaLoadingRef.current = false;
+        setPreviewImage(null);
+    }, [conversation?.conversationId]);
+
+    useEffect(() => {
+        if (activeTab !== 1 || !conversation?.conversationId) return;
+        loadMedia({ cursor: null, append: false });
+    }, [activeTab, conversation?.conversationId, loadMedia]);
+
+    const handleMediaScroll = useCallback((event) => {
+        const element = event.currentTarget;
+        const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 120;
+        if (nearBottom && mediaHasNext && mediaCursor && !mediaLoadingRef.current) {
+            loadMedia({ cursor: mediaCursor, append: true });
+        }
+    }, [loadMedia, mediaCursor, mediaHasNext]);
 
     const SwitchCustom = styled((props) => (
         <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
@@ -134,6 +212,117 @@ function RightPanel({ conversation, onDeleteConversation }) {
         },
     }));
 
+    const renderInfoTab = () => (
+        <>
+            {conversation.conversationType === TYPE.GROUP ?
+                <List sx={{ width: '100%', height: '100%', bgcolor: 'background.paper', position: 'relative', overflow: 'auto', p: 0 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2.5, py: 1.5 }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary' }}>{members.length} Members</Typography>
+                        <IconButton size='small' onClick={() => setOpenAddDialog(true)} sx={{ color: 'primary.main' }}>
+                            <AddCircleIcon fontSize='small' />
+                        </IconButton>
+                    </Box>
+                    {members.map((member) => (
+                        <ListItemButton
+                            key={member.userId}
+                            sx={{
+                                px: 2,
+                                py: 1,
+                                mx: 1,
+                                borderRadius: '8px',
+                                '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                            }}
+                            selected={selectedIndex === member.userId}
+                            onClick={(event) => handleListItemClick(event, member.userId)}
+                        >
+                            <ListItem alignItems="flex-start" sx={{ p: 0 }}>
+                                <ListItemAvatar>
+                                    <Badge anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color="success">
+                                        <Avatar alt={member.userName} src={member.userAvatar} sx={{ width: 36, height: 36 }} />
+                                    </Badge>
+                                </ListItemAvatar>
+                                <ListItemText primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{member.userName}</Typography>} />
+                                {user?.id !== member?.userId && member?.userRole !== 'ADMIN' && (
+                                    <IconButton onClick={() => handleDelete(member)} size='small' color='error'>
+                                        <Close fontSize="small" />
+                                    </IconButton>
+                                )}
+                            </ListItem>
+                        </ListItemButton>
+                    ))}
+                </List> :
+                <Box sx={{ display: 'flex', flexDirection: 'column', px: 2.5, py: 2, gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ bgcolor: '#f0f4ff', p: 1, borderRadius: '10px' }}>
+                            <EmailOutlined sx={{ color: 'primary.main', fontSize: 20 }} />
+                        </Box>
+                        <Box>
+                            <Typography fontSize={12} color="text.secondary" sx={{ fontWeight: 500 }}>Email</Typography>
+                            <Typography fontSize={13} variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>{user.email}</Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            }
+        </>
+    );
+
+    const renderMediaTab = () => (
+        <Box
+            onScroll={handleMediaScroll}
+            sx={{
+                height: '100%',
+                overflowY: 'auto',
+                px: 1.5,
+                py: 1.5,
+            }}
+        >
+            {mediaLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={28} />
+                </Box>
+            ) : mediaItems?.length === 0 ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4, px: 2 }}>
+                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                        Chua co hinh anh nao trong cuoc tro chuyen nay
+                    </Typography>
+                </Box>
+            ) : (
+                <ImageList variant="masonry" cols={3} gap={8}>
+                    {mediaItems?.map((item, index) => (
+                        <ImageListItem
+                            key={`${item.messageId || 'msg'}-${item.url || index}-${item.createdAt || index}`}
+                            sx={{
+                                overflow: 'hidden',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                '& img': {
+                                    transition: 'transform 0.2s ease',
+                                },
+                                '&:hover img': {
+                                    transform: 'scale(1.03)',
+                                }
+                            }}
+                            onClick={() => setPreviewImage(item)}
+                        >
+                            <img
+                                src={item.url}
+                                alt={item.fileName || `media-${index}`}
+                                loading="lazy"
+                                style={{ width: '100%', display: 'block' }}
+                            />
+                        </ImageListItem>
+                    ))}
+                </ImageList>
+            )}
+
+            {mediaLoadingMore && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                </Box>
+            )}
+        </Box>
+    );
+
     return (
         <>
             <Paper elevation={0} sx={{
@@ -185,56 +374,21 @@ function RightPanel({ conversation, onDeleteConversation }) {
                         </Typography>
                     </Box>
                 }
+
+                <Box sx={{ borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, newValue) => setActiveTab(newValue)}
+                        variant="fullWidth"
+                        sx={{ minHeight: 44 }}
+                    >
+                        <Tab label="Info" sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600 }} />
+                        <Tab label="Media" sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600 }} />
+                    </Tabs>
+                </Box>
+
                 <Box sx={{ borderBottom: '1px solid rgba(0,0,0,0.06)', flexGrow: 1, overflow: 'hidden' }}>
-                    {conversation.conversationType === TYPE.GROUP ?
-                        <List sx={{ width: '100%', height: '100%', bgcolor: 'background.paper', position: 'relative', overflow: 'auto', p: 0 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2.5, py: 1.5 }}>
-                                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary' }}>{members.length} Members</Typography>
-                                <IconButton size='small' onClick={() => setOpenAddDialog(true)} sx={{ color: 'primary.main' }}>
-                                    <AddCircleIcon fontSize='small' />
-                                </IconButton>
-                            </Box>
-                            {members.map((member) => (
-                                <ListItemButton
-                                    key={member.userId}
-                                    sx={{
-                                        px: 2,
-                                        py: 1,
-                                        mx: 1,
-                                        borderRadius: '8px',
-                                        '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
-                                    }}
-                                    selected={selectedIndex === member.userId}
-                                    onClick={(event) => handleListItemClick(event, member.userId)}
-                                >
-                                    <ListItem alignItems="flex-start" sx={{ p: 0 }}>
-                                        <ListItemAvatar>
-                                            <Badge anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color="success">
-                                                <Avatar alt={member.userName} src={member.userAvatar} sx={{ width: 36, height: 36 }} />
-                                            </Badge>
-                                        </ListItemAvatar>
-                                        <ListItemText primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{member.userName}</Typography>} />
-                                        {user?.id !== member?.userId && member?.userRole !== 'ADMIN' && (
-                                            <IconButton onClick={e => handleDelete(member)} size='small' color='error'>
-                                                <Close fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                    </ListItem>
-                                </ListItemButton>
-                            ))}
-                        </List> :
-                        <Box sx={{ display: 'flex', flexDirection: 'column', px: 2.5, py: 2, gap: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ bgcolor: '#f0f4ff', p: 1, borderRadius: '10px' }}>
-                                    <EmailOutlined sx={{ color: 'primary.main', fontSize: 20 }} />
-                                </Box>
-                                <Box>
-                                    <Typography fontSize={12} color="text.secondary" sx={{ fontWeight: 500 }}>Email</Typography>
-                                    <Typography fontSize={13} variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>{user.email}</Typography>
-                                </Box>
-                            </Box>
-                        </Box>
-                    }
+                    {activeTab === 0 ? renderInfoTab() : renderMediaTab()}
                 </Box>
                 <Box sx={{ borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0, px: 2.5, py: 1.5 }}>
                     <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary', mb: 1 }}>Settings</Typography>
@@ -295,6 +449,17 @@ function RightPanel({ conversation, onDeleteConversation }) {
                 description={`Are you sure you want to delete ${conversation?.conversationTitle}?`}
                 handleFunction={handleDeleteGroup}
             />
+            <Dialog open={Boolean(previewImage)} onClose={() => setPreviewImage(null)} maxWidth="lg">
+                {previewImage && (
+                    <Box sx={{ bgcolor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img
+                            src={previewImage.url}
+                            alt={previewImage.fileName || 'preview'}
+                            style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'block' }}
+                        />
+                    </Box>
+                )}
+            </Dialog>
         </>
     )
 }
