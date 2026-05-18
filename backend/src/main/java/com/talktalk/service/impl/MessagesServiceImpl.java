@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +25,8 @@ import com.talktalk.dto.common.CreateMessageCommand;
 import com.talktalk.dto.request.ChatMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
 import com.talktalk.dto.request.ReactionRequest;
+import com.talktalk.dto.response.MediaAttachmentPageResponse;
+import com.talktalk.dto.response.MediaAttachmentResponse;
 import com.talktalk.dto.response.MessagePageResponse;
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.exception.AppException;
@@ -192,6 +195,62 @@ public class MessagesServiceImpl implements MessagesService {
 
         @Override
         @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
+        public MediaAttachmentPageResponse getImageAttachmentsByConversationId(Long conversationId, LocalDateTime cursor, int size) {
+                int validSize = size <= 0 ? 20 : Math.min(size, 50);
+
+                Pageable pageable = PageRequest.of(0, validSize);
+
+                List<Message> messages;
+
+                if (cursor == null) {
+                        messages = messagesRepository
+                                        .findByConversationIdAndAttachmentsIsNotNullAndDeletedAtIsNullOrderByCreatedAtDesc(
+                                                        conversationId,
+                                                        pageable);
+                } else {
+                        messages = messagesRepository
+                                        .findByConversationIdAndAttachmentsIsNotNullAndDeletedAtIsNullAndCreatedAtBeforeOrderByCreatedAtDesc(
+                                                        conversationId,
+                                                        cursor,
+                                                        pageable);
+                }
+
+                List<MediaAttachmentResponse> items = messages.stream()
+                                .flatMap(message -> {
+                                        if (message.getAttachments() == null || message.getAttachments().isEmpty()) {
+                                                return Stream.<MediaAttachmentResponse>empty();
+                                        }
+
+                                        return message.getAttachments().stream()
+                                                        .filter(attachment -> attachment.getContentType() != null
+                                                                        && attachment.getContentType().toLowerCase().startsWith("image/"))
+                                                        .map(attachment -> MediaAttachmentResponse.builder()
+                                                                        .messageId(message.getId())
+                                                                        .url(attachment.getUrl())
+                                                                        .fileName(attachment.getFileName())
+                                                                        .contentType(attachment.getContentType())
+                                                                        .size(attachment.getSize())
+                                                                        .createdAt(attachment.getCreatedAt() != null
+                                                                                        ? attachment.getCreatedAt()
+                                                                                        : message.getCreatedAt())
+                                                                        .build());
+                                })
+                                .limit(validSize)
+                                .collect(Collectors.toList());
+
+                LocalDateTime nextCursor = messages.isEmpty()
+                                ? null
+                                : messages.get(messages.size() - 1).getCreatedAt();
+
+                return MediaAttachmentPageResponse.builder()
+                                .items(items)
+                                .nextCursor(nextCursor)
+                                .hasNext(messages.size() == validSize)
+                                .build();
+        }
+
+        @Override
+        @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
         public MessagePageResponse getMessagesByConversationId(Long conversationId, LocalDateTime cursor, int size) {
                 int validSize = size <= 0 ? 25 : Math.min(size, 50);
 
@@ -234,7 +293,7 @@ public class MessagesServiceImpl implements MessagesService {
                                                 message,
                                                 userMap.get(message.getSenderId()),
                                                 userMap))
-                                .toList();
+                                .collect(Collectors.toList());
 
                 LocalDateTime nextCursor = messages.isEmpty()
                                 ? null

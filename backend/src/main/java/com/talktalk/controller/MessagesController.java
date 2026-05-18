@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.talktalk.dto.response.ApiResponse;
+import com.talktalk.dto.response.MediaAttachmentPageResponse;
 import com.talktalk.dto.response.MessagePageResponse;
 import com.talktalk.service.MessagesService;
 
@@ -36,6 +37,20 @@ public class MessagesController {
         return ApiResponse.<MessagePageResponse>builder()
                 .code(HttpStatus.OK.value())
                 .message("Get messages successfully")
+                .data(response)
+                .build();
+    }
+
+    @GetMapping("/media")
+    public ApiResponse<MediaAttachmentPageResponse> getImageAttachmentsByConversationId(
+            @RequestParam Long conversationId,
+            @RequestParam(required = false) LocalDateTime cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("Get image attachments by conversation id: {}, cursor: {}, size: {}", conversationId, cursor, size);
+        MediaAttachmentPageResponse response = messagesService.getImageAttachmentsByConversationId(conversationId, cursor, size);
+        return ApiResponse.<MediaAttachmentPageResponse>builder()
+                .code(HttpStatus.OK.value())
+                .message("Get image attachments successfully")
                 .data(response)
                 .build();
     }

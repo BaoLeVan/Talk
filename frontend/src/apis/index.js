@@ -78,6 +78,11 @@ export const getMessagesByConversationId = async (query) => {
     return response.data;
 }
 
+export const getConversationMedia = async (query) => {
+    const response = await authorizeAxios.get(`${API_ROOT}/api/v1/messages/media`, { params: query });
+    return response.data;
+}
+
 
 export const createGroupConversation = async (payload) => {
     const response = await authorizeAxios.post(`${API_ROOT}/api/v1/conversations/groups`, payload);
