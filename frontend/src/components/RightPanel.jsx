@@ -40,6 +40,7 @@ function RightPanel({ conversation, onDeleteConversation }) {
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
     const [openDeleteGroupDialog, setOpenDeleteGroupDialog] = useState(false);
+    const [openLeaveGroupDialog, setOpenLeaveGroupDialog] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
     const [mediaItems, setMediaItems] = useState([]);
     const [mediaCursor, setMediaCursor] = useState(null);
@@ -411,7 +412,7 @@ function RightPanel({ conversation, onDeleteConversation }) {
                     <Box sx={{ display: 'flex', px: 2, py: 2, gap: 1, flexShrink: 0 }}>
                         <Button fullWidth variant="outlined" color='error'
                             sx={{ borderRadius: '10px', fontWeight: 600, textTransform: 'none' }}
-                            onClick={() => leaveGroup(conversation?.conversationId)}>
+                            onClick={() => setOpenLeaveGroupDialog(true)}>
                             Leave Group
                         </Button>
                         <Button fullWidth variant="outlined" color='error'
@@ -441,6 +442,13 @@ function RightPanel({ conversation, onDeleteConversation }) {
                 setOpenDialog={setOpenAddDialog}
                 members={members}
                 onAdd={handleAddMembers}
+            />
+            <DialogConfirm
+                openDialog={openLeaveGroupDialog}
+                setOpenDialog={setOpenLeaveGroupDialog}
+                title={`Leave Group ${conversation?.conversationTitle}`}
+                description={`Are you sure you want to leave ${conversation?.conversationTitle}?`}
+                handleFunction={() => leaveGroup(conversation?.conversationId)}
             />
             <DialogConfirm
                 openDialog={openDeleteGroupDialog}

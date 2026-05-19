@@ -1,5 +1,6 @@
 package com.talktalk.service;
 
+import com.talktalk.dto.request.ChangePasswordRequest;
 import com.talktalk.dto.request.LoginRequest;
 import com.talktalk.dto.request.RegisterRequest;
 import com.talktalk.dto.response.AuthenticationResponse;
@@ -14,4 +15,5 @@ public interface AuthService {
     void resendOtp(String email);
     AuthenticationResponse login(LoginRequest request);
     AuthenticationResponse refreshToken(String refreshToken) throws JOSEException, ParseException;
+    void changePassword(ChangePasswordRequest request);
 }

@@ -25,14 +25,17 @@ authorizeAxios.interceptors.response.use(function onFulfilled(response) {
   }, async function onRejected(error) {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    const isRefreshRequest = originalRequest?.url?.includes('/api/v1/auth/refresh');
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isRefreshRequest) {
       originalRequest._retry = true;
 
       try {
         if (!refreshTokenPromise) {
           refreshTokenPromise = refreshToken()
             .then((response) => {
-              const newAccessToken = response.data.accessToken;
+              const newAccessToken = response?.data?.accessToken;
+              if (!newAccessToken) throw new Error('Refresh token failed');
               setAccessToken(newAccessToken);
               return newAccessToken;
             })

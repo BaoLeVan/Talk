@@ -36,6 +36,7 @@ public enum ErrorCode {
     USER_NOT_VERIFIED(1003, "User not verified", HttpStatus.BAD_REQUEST),
     USER_ALREADY_VERIFIED(1004, "User already verified", HttpStatus.BAD_REQUEST),
     PASSWORD_WRONG(1005, "Password is wrong", HttpStatus.BAD_REQUEST),
+    NEW_PASSWORD_MUST_BE_DIFFERENT(1006, "New password must be different from current password", HttpStatus.BAD_REQUEST),
 
     // Mail
     FAILED_TO_SEND_OTP(1100, "Failed to send OTP", HttpStatus.INTERNAL_SERVER_ERROR),
