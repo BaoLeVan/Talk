@@ -2,11 +2,12 @@ import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
 import EmailIcon from "@mui/icons-material/Email";
 import PersonIcon from "@mui/icons-material/Person";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import LockResetIcon from "@mui/icons-material/LockReset";
 import { useState } from "react";
 import { RemoveCircleOutline } from "@mui/icons-material";
 import DialogConfirm from "../Form/DialogConfirm";
 
-export default function ProfileModal({ open, onClose, user, showAddFriendButton = false, showRemoveFriendButton = false, onSendFriendRequest, onRemoveFriendRequest }) {
+export default function ProfileModal({ open, onClose, user, showAddFriendButton = false, showRemoveFriendButton = false, onSendFriendRequest, onRemoveFriendRequest, showChangePasswordButton = false, onOpenChangePassword }) {
   const [sending, setSending] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -118,6 +119,17 @@ export default function ProfileModal({ open, onClose, user, showAddFriendButton 
               </Button>
             )
           }
+          {showChangePasswordButton && (
+            <Button
+              onClick={onOpenChangePassword}
+              variant="contained"
+              fullWidth
+              startIcon={<LockResetIcon />}
+              sx={{ borderRadius: 999, textTransform: 'none', py: 1, bgcolor: '#5B67FF', '&:hover': { bgcolor: '#4C57E6' } }}
+            >
+              Change Password
+            </Button>
+          )}
           <Button onClick={onClose} variant="outlined" fullWidth sx={{ borderRadius: 999, textTransform: 'none', py: 1 }}>
             Đóng
           </Button>

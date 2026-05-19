@@ -1,8 +1,9 @@
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import SideBar from './components/SideBar';
 import RightPanel from './components/RightPanel';
 import ChatWindow from './components/ChatWindow';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useUser } from './components/context/UserContext';
 import { useChatStore } from './store/useChatStore';
 import useDebounce from './hooks/useDebounce';
@@ -14,7 +15,8 @@ function App() {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [searchConversation, setSearchConversation] = useState('');
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
+  const navigate = useNavigate();
   const fetchConversations = useChatStore((state) => state.fetchConversations);
   const setMembers = useChatStore((state) => state.setMembers);
   const debouncedSearchConversation = useDebounce(searchConversation, 500);
@@ -22,6 +24,12 @@ function App() {
   useEffect(() => {
     if (user?.id) fetchConversations(user.id, debouncedSearchConversation);
   }, [user?.id, debouncedSearchConversation, fetchConversations]);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/login');
+    }
+  }, [isLoading, navigate, user]);
 
   useEffect(() => {
     if (!conversation?.conversationId || conversation?.conversationType !== TYPE.GROUP) {
@@ -54,6 +62,16 @@ function App() {
       await fetchConversations(user.id, debouncedSearchConversation);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#F3F5FF' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <Box sx={{

@@ -42,6 +42,11 @@ export const logout = async () => {
     return response.data;
 }
 
+export const changePassword = async ({ currentPassword, newPassword }) => {
+    const response = await authorizeAxios.post(`${API_ROOT}/api/v1/auth/change-password`, { currentPassword, newPassword });
+    return response.data;
+}
+
 //conversation
 export const getAllConversationsByUser = async (userId, keyword = '') => {
     const response = await authorizeAxios.get(`${API_ROOT}/api/v1/conversations/user/${userId}?title=${keyword}`);

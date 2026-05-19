@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Box, CircularProgress, Typography } from '@mui/material'
+import { Box, CircularProgress, Fab, Typography } from '@mui/material'
 import MessageInput from './MessageInput'
 import HeaderChat from './HeaderChat'
 import MessageItem from './MessageItem'
@@ -9,6 +9,7 @@ import { useStomp } from '~/components/context/StompContext'
 import moment from 'moment'
 import { useChatStore } from '~/store/useChatStore'
 import { COLORS } from '~/utils/common'
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
   const { user } = useUser();
@@ -21,6 +22,7 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
   const [nextCursor, setNextCursor] = useState(null);
   const [hasNext, setHasNext] = useState(false);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   const mapMessages = useCallback((rawMessages = []) => rawMessages.map((message) => {
     const isSystemMessage = message?.messageType === 'SYSTEM';
@@ -43,7 +45,10 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
       const el = messagesContainerRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+        setShowScrollToBottom(false);
+      }
     });
   }, []);
 
@@ -61,6 +66,7 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
       setMessages([]);
       setNextCursor(null);
       setHasNext(false);
+      setShowScrollToBottom(false);
       return;
     }
 
@@ -139,6 +145,10 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
 
   const handleMessagesScroll = useCallback((event) => {
     const el = event.currentTarget;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+    setShowScrollToBottom(distanceFromBottom > 200);
+
     if (el.scrollTop <= 80) loadOlderMessages();
   }, [loadOlderMessages]);
 
@@ -217,7 +227,8 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      bgcolor: '#FFFFFF'
+      bgcolor: '#FFFFFF',
+      position: 'relative'
     }}>
       <Box sx={{ flexShrink: 0 }}>
         <HeaderChat conversation={conversation} rightPanelOpen={rightPanelOpen} setRightPanelOpen={setRightPanelOpen} />
@@ -244,6 +255,24 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
         )}
         <MessageItem />
       </Box>
+      {showScrollToBottom && (
+        <Fab
+          size='small'
+          onClick={scrollToBottom}
+          sx={{
+            mb:1,
+            position: 'absolute',
+            right: '50%',
+            bottom: 96,
+            bgcolor: COLORS.primary,
+            color: COLORS.white,
+            boxShadow: '0 10px 24px rgba(91,103,255,0.35)',
+            '&:hover': { bgcolor: '#4C57E6' }
+          }}
+        >
+          <KeyboardArrowDownIcon />
+        </Fab>
+      )}
       <Box sx={{
         flexShrink: 0,
         bgcolor: '#FFFFFF',

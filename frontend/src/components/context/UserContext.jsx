@@ -9,12 +9,31 @@ export default function UserContextProvider({ children }) {
     const userCurrent = localStorage.getItem("user");
 
     useEffect(() => {
-        if (userCurrent) {
-            getCurrentUser().then((data) => {
-                setUser(data.data);
-            })
-        }
-    }, [])
+        let ignore = false;
+
+        const bootstrapUser = async () => {
+            if (!userCurrent) {
+                if (!ignore) setIsLoading(false);
+                return;
+            }
+
+            try {
+                const data = await getCurrentUser();
+                if (!ignore) setUser(data.data);
+            } catch (error) {
+                localStorage.removeItem("user");
+                if (!ignore) setUser(null);
+            } finally {
+                if (!ignore) setIsLoading(false);
+            }
+        };
+
+        bootstrapUser();
+
+        return () => {
+            ignore = true;
+        };
+    }, [userCurrent])
 
     return (
         <UserContext.Provider value={{ user, setUser, isLoading, setIsLoading }}>

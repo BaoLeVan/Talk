@@ -4,7 +4,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { KeyboardArrowDown, KeyboardArrowRight, LogoutOutlined, Search, People } from '@mui/icons-material';
 import { COLORS, formatTimeChat } from '~/utils/common';
 import { useNavigate } from 'react-router';
-import { createGroupConversation, logout, setAccessToken } from '~/apis';
+import { changePassword, createGroupConversation, logout, setAccessToken } from '~/apis';
 import { toast } from 'react-toastify';
 import { useUser } from '~/components/context/UserContext';
 import { TYPE } from '~/utils/constants';
@@ -13,13 +13,20 @@ import NotificationsList from './Toast/NotificationsList';
 import ProfileModal from './Toast/ProfileModal';
 import { useChatStore } from '~/store/useChatStore';
 import CreateGroupConversationDialog from './Form/CreateGroupConversationDialog';
+import DialogConfirm from './Form/DialogConfirm';
+import ChangePasswordDialog from './Form/ChangePasswordDialog';
 
 function SideBar({ selectedIndex, onSelectConversation, setConversation, searchConversation, setSearchConversation }) {
   const navigate = useNavigate();
   const [friendsDialogOpen, setFriendsDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
-  const { user } = useUser();
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const { user, setUser } = useUser();
   const [collapsedSections, setCollapsedSections] = useState({ private: false, group: false });
   const { conversations, isLoading, fetchConversations } = useChatStore();
 
@@ -30,12 +37,31 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation, searchC
     setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
     setAccessToken(null);
     const result = await logout();
     if (result?.message) toast.success(result.message);
     localStorage.removeItem('user');
+    setUser(null);
     navigate('/login');
+  }
+
+  const handleChangePassword = async ({ currentPassword, newPassword }, resetForm) => {
+    try {
+      setIsChangingPassword(true);
+      const result = await changePassword({ currentPassword, newPassword });
+      if (result?.message) toast.success(result.message);
+      resetForm();
+      setChangePasswordDialogOpen(false);
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setAccessToken(null);
+      localStorage.removeItem('user');
+      setUser(null);
+      navigate('/login');
+    } finally {
+      setIsChangingPassword(false);
+    }
   }
 
   const handleCreateGroupConversation = async (payload) => {
@@ -266,7 +292,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation, searchC
         </Box>
         <IconButton
           size='small'
-          onClick={handleLogout}
+          onClick={() => setLogoutDialogOpen(true)}
           sx={{
             borderRadius: '12px',
             color: COLORS.textSecondary,
@@ -280,11 +306,41 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation, searchC
       <Dialog open={friendsDialogOpen} onClose={() => setFriendsDialogOpen(false)} fullWidth>
         <FriendsList />
       </Dialog>
-      <ProfileModal open={profileDialogOpen} onClose={() => setProfileDialogOpen(false)} user={user} />
+      <ProfileModal
+        open={profileDialogOpen}
+        onClose={() => setProfileDialogOpen(false)}
+        user={user}
+        showChangePasswordButton
+        onOpenChangePassword={() => {
+          setProfileDialogOpen(false);
+          setChangePasswordDialogOpen(true);
+        }}
+      />
       <CreateGroupConversationDialog
         open={createGroupDialogOpen}
         onClose={() => setCreateGroupDialogOpen(false)}
         onCreate={handleCreateGroupConversation}
+      />
+      <ChangePasswordDialog
+        open={changePasswordDialogOpen}
+        onClose={() => {
+          setChangePasswordDialogOpen(false);
+          setShowCurrentPassword(false);
+          setShowNewPassword(false);
+        }}
+        onSubmit={handleChangePassword}
+        isSubmitting={isChangingPassword}
+        showCurrentPassword={showCurrentPassword}
+        setShowCurrentPassword={setShowCurrentPassword}
+        showNewPassword={showNewPassword}
+        setShowNewPassword={setShowNewPassword}
+      />
+      <DialogConfirm
+        openDialog={logoutDialogOpen}
+        setOpenDialog={setLogoutDialogOpen}
+        title='Logout'
+        description='Ban co chac muon dang xuat khong?'
+        handleFunction={confirmLogout}
       />
     </Paper>
   )

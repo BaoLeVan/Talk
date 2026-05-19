@@ -23,9 +23,10 @@ export default function StompProvider({ children }) {
             if (!token) {
                 try {
                     const response = await refreshToken();
-                    if (response?.data?.accessToken) {
-                        setAccessToken(response.data.accessToken);
-                        token = response.data.accessToken;
+                    const refreshedAccessToken = response?.data?.accessToken;
+                    if (refreshedAccessToken) {
+                        setAccessToken(refreshedAccessToken);
+                        token = refreshedAccessToken;
                     }
                 } catch {
                     // Not logged in

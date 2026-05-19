@@ -22,6 +22,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.talktalk.config.JwtProperties;
+import com.talktalk.dto.request.ChangePasswordRequest;
 import com.talktalk.dto.request.LoginRequest;
 import com.talktalk.dto.request.RegisterRequest;
 import com.talktalk.dto.response.AuthenticationResponse;
@@ -38,6 +39,7 @@ import com.talktalk.service.AuthService;
 import com.talktalk.service.SenderService;
 import com.talktalk.service.UserService;
 import com.talktalk.service.redis.service.OtpRedisService;
+import com.talktalk.utils.Utils;
 
 import jakarta.mail.MessagingException;
 import lombok.AccessLevel;
@@ -57,6 +59,7 @@ public class AuthServiceImpl implements AuthService {
     UserMapper userMapper;
     SenderService senderService;
     UserRepository userRepository;
+    Utils utils;
 
     JwtProperties jwtProperties;
 
@@ -210,6 +213,24 @@ public class AuthServiceImpl implements AuthService {
             log.error("Failed to resend OTP to {}: {}", email, e.getMessage());
             throw new AppException(ErrorCode.FAILED_TO_SEND_OTP);
         }
+    }
+
+    @Override
+    public void changePassword(ChangePasswordRequest request) {
+        UserResponse currentUser = utils.getCurrentUser();
+        User user = userRepository.findByEmail(currentUser.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_WRONG);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.NEW_PASSWORD_MUST_BE_DIFFERENT);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     public AuthenticationResponse refreshToken(String refreshToken) throws JOSEException, ParseException {

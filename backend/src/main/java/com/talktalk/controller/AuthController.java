@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
+import com.talktalk.dto.request.ChangePasswordRequest;
 import com.talktalk.dto.request.LoginRequest;
 import com.talktalk.dto.request.RegisterRequest;
 import com.talktalk.dto.request.ResendOtpRequest;
@@ -28,6 +29,7 @@ import com.talktalk.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -119,6 +121,29 @@ public class AuthController {
                         .accessToken(response.getAccessToken())
                         .user(response.getUser())
                         .build())
+                .build();
+    }
+
+    @PostMapping("/change-password")
+    public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+            HttpServletResponse httpServletResponse) {
+        log.info("Change password request");
+
+        authService.changePassword(request);
+
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(0)
+                .build();
+
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+
+        return ApiResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message("Change password success")
                 .build();
     }
 

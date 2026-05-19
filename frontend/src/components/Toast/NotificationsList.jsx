@@ -13,9 +13,11 @@ import { useFriendStore } from '~/store/useFriendStore';
 import { useState, useEffect } from 'react';
 import { NotificationsNoneRounded } from '@mui/icons-material';
 import { COLORS, formatTimeChat } from '~/utils/common';
+import { useUser } from '~/components/context/UserContext';
 
 export default function FriendRequestsReceived() {
   const { receivedRequests, acceptRequest, rejectRequest, loading, fetchReceivedRequests } = useFriendStore();
+  const { user, isLoading } = useUser();
   const { sendMessage } = useStomp();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -37,8 +39,9 @@ export default function FriendRequestsReceived() {
   };
 
   useEffect(() => {
+    if (isLoading || !user?.id) return;
     fetchReceivedRequests();
-  }, [fetchReceivedRequests]);
+  }, [fetchReceivedRequests, isLoading, user?.id]);
 
   const handleReject = async (requestId) => {
     try {
