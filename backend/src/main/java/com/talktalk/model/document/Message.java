@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.talktalk.exception.enums.MessageAction;
@@ -29,7 +30,9 @@ import jakarta.persistence.Id;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Message extends BaseEntity {
     @Id
+    @Indexed
     String id;
+    @Indexed
     Long conversationId;
     Long senderId;
     String content;

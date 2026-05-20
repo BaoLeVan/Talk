@@ -46,7 +46,7 @@ function HeaderChat({ conversation, rightPanelOpen, setRightPanelOpen }) {
           {conversation.conversationType === 'GROUP' ? conversation.conversationTitle : conversation.userName}
         </Typography>
         {(conversation?.conversationType === 'GROUP' || conversation?.userIsOnline) && (
-          <Typography sx={{ fontSize: '13px', color: '#22C55E', fontWeight: 500 }}>Trực tuyến</Typography>
+          <Typography sx={{ fontSize: '13px', color: '#22C55E', fontWeight: 500 }}>Online</Typography>
         )}
       </Box>
 

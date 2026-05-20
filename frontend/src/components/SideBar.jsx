@@ -339,7 +339,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation, searchC
         openDialog={logoutDialogOpen}
         setOpenDialog={setLogoutDialogOpen}
         title='Logout'
-        description='Ban co chac muon dang xuat khong?'
+        description='Are you sure you want to log out?'
         handleFunction={confirmLogout}
       />
     </Paper>

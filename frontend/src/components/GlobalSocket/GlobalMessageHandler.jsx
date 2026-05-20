@@ -5,7 +5,14 @@ import { useUser } from '../context/UserContext';
 
 export default function GlobalMessageHandler() {
   const { connected, subscribe, unsubscribe } = useStomp();
-  const { conversations, currentConversationId, updateConversationOnNewMessage, addMessage, updateMessageReactions } = useChatStore();
+  const {
+    conversations,
+    currentConversationId,
+    updateConversationOnNewMessage,
+    addMessage,
+    updateMessageReactions,
+    removeMessageLocally,
+  } = useChatStore();
   const { user } = useUser();
   const subscriptionsRef = useRef(new Map());
 
@@ -20,7 +27,13 @@ export default function GlobalMessageHandler() {
         const message = JSON.parse(data.body);
         const isCurrent = currentConversationId === conv.conversationId;
 
-        // reaction update — chỉ cập nhật reactions, không thêm message mới
+        if (message.deleteType === 'EVERYONE') {
+          if (isCurrent) {
+            removeMessageLocally(message.messageId);
+          }
+          return;
+        }
+
         if (message.status === 'REACTED') {
           if (isCurrent) {
             updateMessageReactions(message.idMessage, message.reactions || []);
@@ -63,7 +76,25 @@ export default function GlobalMessageHandler() {
       });
       subscriptionsRef.current.clear();
     };
-  }, [connected, conversations, currentConversationId, user?.id, updateConversationOnNewMessage, addMessage, updateMessageReactions, subscribe, unsubscribe]);
+  }, [connected, conversations, currentConversationId, user?.id, updateConversationOnNewMessage, addMessage, updateMessageReactions, removeMessageLocally, subscribe, unsubscribe]);
+
+  useEffect(() => {
+    if (!connected || !user?.email) return;
+
+    const topic = '/user/queue/messages';
+    const callback = (data) => {
+      const message = JSON.parse(data.body);
+      if (message.deleteType === 'SELF') {
+        removeMessageLocally(message.messageId);
+      }
+    };
+
+    subscribe(topic, callback);
+
+    return () => {
+      unsubscribe(topic);
+    };
+  }, [connected, user?.email, removeMessageLocally, subscribe, unsubscribe]);
 
   return null;
 }

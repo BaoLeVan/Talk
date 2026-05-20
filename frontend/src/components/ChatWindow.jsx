@@ -198,10 +198,10 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
             💬
           </Box>
           <Typography sx={{ fontWeight: 700, fontSize: '28px', color: '#111827', mb: 1.5, letterSpacing: '-0.5px' }}>
-            Chào mừng bạn!
+            Welcome!
           </Typography>
           <Typography sx={{ fontSize: '15px', color: '#6B7280', mb: 3.5, lineHeight: 1.6 }}>
-            Kết nối và trò chuyện cùng mọi người ngay bây giờ.
+            Connect and chat with everyone right now.
           </Typography>
           <Box sx={{
             width: '100%',
@@ -215,7 +215,7 @@ function ChatWindow({ conversation, rightPanelOpen, setRightPanelOpen }) {
             cursor: 'default',
             boxShadow: '0 8px 20px rgba(91,103,255,0.3)',
           }}>
-            Chọn cuộc trò chuyện để bắt đầu
+            Select a conversation to start
           </Box>
         </Box>
       </Box>

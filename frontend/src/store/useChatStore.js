@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { getAllConversationsByUser } from '~/apis';
 
 export const useChatStore = create((set) => ({
@@ -19,6 +19,12 @@ export const useChatStore = create((set) => ({
 
     addMessage: (msg) =>
         set(state => ({ messages: [...state.messages, msg] })),
+
+    removeMessageLocally: (messageId) =>
+        set((state) => ({
+            messages: state.messages.filter((message) => message.id !== messageId),
+            editingMessage: state.editingMessage?.id === messageId ? null : state.editingMessage,
+        })),
 
     updateMessageLocally: (messageId, content) =>
         set((state) => ({
@@ -61,8 +67,8 @@ export const useChatStore = create((set) => ({
                 if (conv.conversationId !== conversationId) return conv;
                 if(newMessage.status === 'EDITED') return conv;
                 const updated = { ...conv };
-                updated.conversationLastSenderId = newMessage.user.id;
-                updated.conversationLastSenderName = newMessage.user.userName;
+                updated.conversationLastSenderId = newMessage.user?.id ?? updated.conversationLastSenderId;
+                updated.conversationLastSenderName = newMessage.user?.userName ?? updated.conversationLastSenderName;
                 updated.conversationLastMessage = newMessage.content;
                 updated.conversationLastMessageAt = newMessage.createdAt || newMessage.timestamp;
                 if (

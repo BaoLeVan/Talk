@@ -3,9 +3,11 @@ package com.talktalk.service;
 import java.time.LocalDateTime;
 
 import com.talktalk.dto.request.ChatMessageRequest;
+import com.talktalk.dto.request.DeleteMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
 import com.talktalk.dto.request.ReactionRequest;
 import com.talktalk.dto.response.MediaAttachmentPageResponse;
+import com.talktalk.dto.response.MessageDeleteResponse;
 import com.talktalk.dto.response.MessagePageResponse;
 import com.talktalk.dto.response.MessageResponse;
 
@@ -27,4 +29,6 @@ public interface MessagesService {
     void markRead(Long conversationId, String lastReadMessageId, Long userId);
 
     MessageResponse reactToMessage(ReactionRequest request);
+
+    MessageDeleteResponse deleteMessage(DeleteMessageRequest request, Long userId);
 }

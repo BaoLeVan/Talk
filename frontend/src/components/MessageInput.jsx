@@ -208,7 +208,7 @@ function MessageInput({ conversation, sendMessage }) {
                   }}>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#5B67FF' }}>
-                        Ðang chỉnh sửa tin nhắn
+                        Editing message
                       </Typography>
                       <Typography sx={{ fontSize: '0.78rem', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {editingMessage.content}
@@ -271,7 +271,7 @@ function MessageInput({ conversation, sendMessage }) {
 
                 <Input
                   ref={inputRef}
-                  placeholder={editingMessage ? 'Chỉnh sửa tin nhắn...' : 'Type a message...'}
+                  placeholder={editingMessage ? 'Edit message...' : 'Type a message...'}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   sx={{

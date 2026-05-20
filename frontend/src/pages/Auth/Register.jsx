@@ -61,7 +61,7 @@ function Register() {
         navigate("/verify-otp", { state: { email: data.email } });
       }
     } catch (error) {
-      toast.error("Đăng ký thất bại. Vui lòng thử lại.");
+      toast.error("Registration failed. Please try again.");
     }
   }
   return (

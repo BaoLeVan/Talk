@@ -8,9 +8,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.talktalk.dto.request.ChatMessageRequest;
+import com.talktalk.dto.request.DeleteMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
 import com.talktalk.dto.request.ReadReceiptRequest;
 import com.talktalk.dto.request.ReactionRequest;
+import com.talktalk.dto.response.MessageDeleteResponse;
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.dto.response.ReadReceiptResponse;
 import com.talktalk.dto.response.RoleUserInConversation;
@@ -47,6 +49,22 @@ public class MessageMessagingController {
         log.info("Received edit message from {}: {}", request.getSenderId(), request.getContent());
         MessageResponse response = messagesService.editMessage(request);
         messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
+    }
+
+    @MessageMapping("/chat.deleteMessage")
+    public void deleteMessage(@Payload DeleteMessageRequest request, Principal principal) {
+        Long userId = utils.getUserIdFromPrincipal(principal);
+        log.info("Delete message: {}, conversation: {}, user: {}, type: {}",
+                request.getMessageId(), request.getConversationId(), userId, request.getDeleteType());
+
+        MessageDeleteResponse response = messagesService.deleteMessage(request, userId);
+
+        if ("EVERYONE".equalsIgnoreCase(response.getDeleteType())) {
+            messagingTemplate.convertAndSend("/topic/room." + request.getConversationId(), response);
+            return;
+        }
+
+        messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/messages", response);
     }
 
     @MessageMapping("/chat.addUser")
