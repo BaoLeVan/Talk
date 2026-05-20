@@ -99,7 +99,7 @@ export const useFriendStore = create((set, get) => ({
 
     if (type === "UNFRIENDED" || type === "UNFRIENDED_BY_ME") {
       get().fetchFriends();
-      toast.success("Đã huỷ kết bạn thành công");
+      toast.success("Unfriended successfully");
     }
   },
 }));

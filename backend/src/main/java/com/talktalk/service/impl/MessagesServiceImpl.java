@@ -23,10 +23,12 @@ import org.springframework.stereotype.Service;
 
 import com.talktalk.dto.common.CreateMessageCommand;
 import com.talktalk.dto.request.ChatMessageRequest;
+import com.talktalk.dto.request.DeleteMessageRequest;
 import com.talktalk.dto.request.HandleSocketRequest;
 import com.talktalk.dto.request.ReactionRequest;
 import com.talktalk.dto.response.MediaAttachmentPageResponse;
 import com.talktalk.dto.response.MediaAttachmentResponse;
+import com.talktalk.dto.response.MessageDeleteResponse;
 import com.talktalk.dto.response.MessagePageResponse;
 import com.talktalk.dto.response.MessageResponse;
 import com.talktalk.exception.AppException;
@@ -37,6 +39,7 @@ import com.talktalk.exception.enums.MessageType;
 import com.talktalk.mapper.MessageMapper;
 import com.talktalk.model.document.Attachment;
 import com.talktalk.model.document.Message;
+import com.talktalk.model.document.MessageHiddenUser;
 import com.talktalk.model.document.MessageReaction;
 import com.talktalk.model.entity.Conversations;
 import com.talktalk.model.entity.User;
@@ -44,9 +47,11 @@ import com.talktalk.repository.jpa.ConversationsMembersRepository;
 import com.talktalk.repository.jpa.ConversationsRepository;
 import com.talktalk.repository.jpa.UserRepository;
 import com.talktalk.repository.mongo.AttachmentRepository;
+import com.talktalk.repository.mongo.MessageHiddenUserRepository;
 import com.talktalk.repository.mongo.MessagesRepository;
 import com.talktalk.service.MessagesService;
 import com.talktalk.service.redis.service.StatusUserInConvRedisService;
+import com.talktalk.utils.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +70,8 @@ public class MessagesServiceImpl implements MessagesService {
         AttachmentRepository attachmentRepository;
         StatusUserInConvRedisService statusUserInConvRedisService;
         MongoTemplate mongoTemplate;
+        MessageHiddenUserRepository messageHiddenUserRepository;
+        Utils utils;
 
         @Override
         public MessageResponse createMessage(ChatMessageRequest request) {
@@ -252,30 +259,33 @@ public class MessagesServiceImpl implements MessagesService {
         @Override
         @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
         public MessagePageResponse getMessagesByConversationId(Long conversationId, LocalDateTime cursor, int size) {
+                Long currentUserId = utils.getCurrentUser().getId();
                 int validSize = size <= 0 ? 25 : Math.min(size, 50);
+                int querySize = Math.max(validSize * 3, validSize);
 
-                Pageable pageable = PageRequest.of(0, validSize);
+                Pageable pageable = PageRequest.of(0, querySize);
 
-                List<Message> messages;
+                List<Message> queriedMessages;
 
                 if (cursor == null) {
-                        messages = messagesRepository
+                        queriedMessages = messagesRepository
                                         .findByConversationIdOrderByCreatedAtDesc(conversationId, pageable);
                 } else {
-                        messages = messagesRepository
+                        queriedMessages = messagesRepository
                                         .findByConversationIdAndCreatedAtBeforeOrderByCreatedAtDesc(
                                                         conversationId,
                                                         cursor,
                                                         pageable);
                 }
 
-                Collections.reverse(messages);
+                List<Message> visibleMessages = filterVisibleMessagesForUser(queriedMessages, currentUserId, validSize);
+                Collections.reverse(visibleMessages);
 
-                Set<Long> senderIds = messages.stream()
+                Set<Long> senderIds = visibleMessages.stream()
                                 .map(Message::getSenderId)
                                 .collect(Collectors.toSet());
 
-                Set<Long> reactionUserIds = messages.stream()
+                Set<Long> reactionUserIds = visibleMessages.stream()
                                 .filter(m -> m.getReactions() != null)
                                 .flatMap(m -> m.getReactions().stream())
                                 .map(MessageReaction::getUserId)
@@ -288,22 +298,51 @@ public class MessagesServiceImpl implements MessagesService {
                                 .stream()
                                 .collect(Collectors.toMap(User::getId, u -> u));
 
-                List<MessageResponse> response = messages.stream()
+                List<MessageResponse> response = visibleMessages.stream()
                                 .map(message -> messageMapper.toMessageResponse(
                                                 message,
                                                 userMap.get(message.getSenderId()),
                                                 userMap))
                                 .collect(Collectors.toList());
 
-                LocalDateTime nextCursor = messages.isEmpty()
+                LocalDateTime nextCursor = queriedMessages.isEmpty()
                                 ? null
-                                : messages.get(0).getCreatedAt();
+                                : queriedMessages.get(queriedMessages.size() - 1).getCreatedAt();
 
                 return MessagePageResponse.builder()
                                 .messages(response)
                                 .nextCursor(nextCursor)
-                                .hasNext(messages.size() == validSize)
+                                .hasNext(queriedMessages.size() == querySize)
                                 .build();
+        }
+
+        private List<Message> filterVisibleMessagesForUser(List<Message> messages, Long currentUserId, int limit) {
+                if (messages == null || messages.isEmpty()) {
+                        return Collections.emptyList();
+                }
+
+                List<Message> notDeletedMessages = messages.stream()
+                                .filter(message -> message.getDeletedAt() == null)
+                                .collect(Collectors.toList());
+
+                if (notDeletedMessages.isEmpty()) {
+                        return Collections.emptyList();
+                }
+
+                List<String> messageIds = notDeletedMessages.stream()
+                                .map(Message::getId)
+                                .collect(Collectors.toList());
+
+                Set<String> hiddenMessageIds = messageHiddenUserRepository
+                                .findByUserIdAndMessageIdIn(String.valueOf(currentUserId), messageIds)
+                                .stream()
+                                .map(MessageHiddenUser::getMessageId)
+                                .collect(Collectors.toSet());
+
+                return notDeletedMessages.stream()
+                                .filter(message -> !hiddenMessageIds.contains(message.getId()))
+                                .limit(limit)
+                                .collect(Collectors.toList());
         }
 
         @Override
@@ -341,12 +380,10 @@ public class MessagesServiceImpl implements MessagesService {
                                 ? new ArrayList<>()
                                 : new ArrayList<>(message.getReactions());
 
-                // toggle: nếu user đã thả đúng icon này → bỏ; nếu thả icon khác → thay; nếu chưa → thêm
                 boolean removed = reactions.removeIf(r -> r.getUserId().equals(request.getUserId())
                                 && r.getIcon().equals(request.getIcon()));
 
                 if (!removed) {
-                        // xóa reaction cũ của user (nếu có icon khác) rồi thêm mới
                         reactions.removeIf(r -> r.getUserId().equals(request.getUserId()));
                         reactions.add(MessageReaction.builder()
                                         .userId(request.getUserId())
@@ -370,5 +407,58 @@ public class MessagesServiceImpl implements MessagesService {
 
                 User sender = userMap.get(saved.getSenderId());
                 return messageMapper.toMessageResponse(saved, sender, userMap);
+        }
+
+        @Override
+        public MessageDeleteResponse deleteMessage(DeleteMessageRequest request, Long userId) {
+                Message message = messagesRepository.findById(request.getMessageId())
+                                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
+
+                boolean isMember = conversationsMembersRepository
+                                .existsByConversationsIdAndUserIdAndLeftAtIsNull(request.getConversationId(), userId);
+                if (!isMember) {
+                        throw new AppException(ErrorCode.FORBIDDEN);
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+                String deleteType = request.getDeleteType() == null ? "SELF" : request.getDeleteType().trim().toUpperCase();
+
+                if ("EVERYONE".equals(deleteType)) {
+                        if (!userId.equals(message.getSenderId())) {
+                                throw new AppException(ErrorCode.FORBIDDEN);
+                        }
+
+                        if (message.getDeletedAt() == null) {
+                                message.setDeletedAt(now);
+                                message.setUpdatedAt(now);
+                                messagesRepository.save(message);
+                        } else {
+                                now = message.getDeletedAt();
+                        }
+
+                        return MessageDeleteResponse.builder()
+                                        .messageId(message.getId())
+                                        .conversationId(message.getConversationId())
+                                        .userId(userId)
+                                        .deleteType("EVERYONE")
+                                        .deletedAt(now)
+                                        .build();
+                }
+
+                if (!messageHiddenUserRepository.existsByMessageIdAndUserId(message.getId(), String.valueOf(userId))) {
+                        messageHiddenUserRepository.save(MessageHiddenUser.builder()
+                                        .messageId(message.getId())
+                                        .userId(String.valueOf(userId))
+                                        .hiddenAt(now)
+                                        .build());
+                }
+
+                return MessageDeleteResponse.builder()
+                                .messageId(message.getId())
+                                .conversationId(message.getConversationId())
+                                .userId(userId)
+                                .deleteType("SELF")
+                                .deletedAt(now)
+                                .build();
         }
 }

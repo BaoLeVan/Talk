@@ -284,7 +284,7 @@ function RightPanel({ conversation, onDeleteConversation }) {
             ) : mediaItems?.length === 0 ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4, px: 2 }}>
                     <Typography variant="body2" color="text.secondary" textAlign="center">
-                        Chua co hinh anh nao trong cuoc tro chuyen nay
+                        No images in this conversation yet
                     </Typography>
                 </Box>
             ) : (

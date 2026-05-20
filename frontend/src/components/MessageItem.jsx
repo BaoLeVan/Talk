@@ -1,11 +1,14 @@
 import React, { useMemo, useState, useRef } from 'react'
-import { Box, Typography, Avatar, Dialog, IconButton, Tooltip, Popper, Paper, ClickAwayListener } from '@mui/material'
+import { Box, Typography, Avatar, Dialog, IconButton, Tooltip, Popper, Paper, ClickAwayListener, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import ReplyIcon from '@mui/icons-material/Reply';
 import AddReactionOutlinedIcon from '@mui/icons-material/AddReactionOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { useChatStore } from '~/store/useChatStore';
 import { useStomp } from '~/components/context/StompContext';
 import { useUser } from '~/components/context/UserContext';
@@ -15,7 +18,6 @@ const EMOJI_LIST = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '�
 function ReactionBar({ reactions, messageId, conversationId }) {
   if (!reactions || reactions.length === 0) return null;
 
-  // gom nhóm theo icon
   const grouped = reactions.reduce((acc, r) => {
     if (!acc[r.icon]) acc[r.icon] = [];
     acc[r.icon].push(r.userName || 'Unknown');
@@ -117,6 +119,8 @@ function MessageItem() {
   const [pickerAnchor, setPickerAnchor] = useState(null);
   const [pickerMessageId, setPickerMessageId] = useState(null);
   const [pickerConversationId, setPickerConversationId] = useState(null);
+  const [deleteMenuAnchor, setDeleteMenuAnchor] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   const sortedMessages = useMemo(() => messages ?? [], [messages]);
 
@@ -143,6 +147,29 @@ function MessageItem() {
     handleClosePicker();
   };
 
+  const handleOpenDeleteMenu = (event, item) => {
+    setDeleteMenuAnchor(event.currentTarget);
+    setSelectedMessage(item);
+  };
+
+  const handleCloseDeleteMenu = () => {
+    setDeleteMenuAnchor(null);
+    setSelectedMessage(null);
+  };
+
+  const handleDeleteMessage = (deleteType) => {
+    if (!selectedMessage?.id || !selectedMessage?.conversationId) return;
+    console.log(selectedMessage);
+    
+    sendMessage('/app/chat.deleteMessage', {
+      messageId: selectedMessage.id,
+      conversationId: selectedMessage.conversationId,
+      deleteType,
+    });
+
+    handleCloseDeleteMenu();
+  };
+
   return (
     <>
       {sortedMessages.map((item, index) => {
@@ -150,33 +177,45 @@ function MessageItem() {
 
         const actionButtons = item.isOwnMessage ? [
           {
+            key: 'delete',
+            title: 'DeleteMessage',
+            icon: <DeleteOutlineIcon sx={{ fontSize: 18 }} />,
+            onClick: (e) => handleOpenDeleteMenu(e, item)
+          },
+          {
             key: 'edit',
-            title: 'Chỉnh sửa',
+            title: 'Edit',
             icon: <EditIcon sx={{ fontSize: 18 }} />,
             onClick: () => setEditingMessage(item)
           },
           {
             key: 'reaction',
-            title: 'Thả icon',
+            title: 'Reaction',
             icon: <AddReactionOutlinedIcon sx={{ fontSize: 18 }} />,
             onClick: (e) => handleOpenPicker(e, item.id, item.conversationId)
           },
           {
             key: 'reply',
-            title: 'Trả lời',
+            title: 'Reply',
             icon: <ReplyIcon sx={{ fontSize: 18 }} />,
             onClick: () => { }
           }
         ] : [
           {
+            key: 'delete',
+            title: 'Delete for you',
+            icon: <DeleteOutlineIcon sx={{ fontSize: 18 }} />,
+            onClick: (e) => handleOpenDeleteMenu(e, item)
+          },
+          {
             key: 'reply',
-            title: 'Trả lời',
+            title: 'Reply',
             icon: <ReplyIcon sx={{ fontSize: 18 }} />,
             onClick: () => { }
           },
           {
             key: 'reaction',
-            title: 'Thả icon',
+            title: 'Reaction',
             icon: <AddReactionOutlinedIcon sx={{ fontSize: 18 }} />,
             onClick: (e) => handleOpenPicker(e, item.id, item.conversationId)
           }
@@ -440,6 +479,29 @@ function MessageItem() {
         onClose={handleClosePicker}
         onSelect={handleSelectEmoji}
       />
+
+      <Menu
+        anchorEl={deleteMenuAnchor}
+        open={Boolean(deleteMenuAnchor)}
+        onClose={handleCloseDeleteMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <MenuItem onClick={() => handleDeleteMessage('SELF')}>
+          <ListItemIcon>
+            <VisibilityOffOutlinedIcon fontSize='small' />
+          </ListItemIcon>
+          <ListItemText>Delete for you</ListItemText>
+        </MenuItem>
+        {selectedMessage?.isOwnMessage && (
+          <MenuItem onClick={() => handleDeleteMessage('EVERYONE')}>
+            <ListItemIcon>
+              <DeleteForeverOutlinedIcon fontSize='small' sx={{ color: '#DC2626' }} />
+            </ListItemIcon>
+            <ListItemText sx={{ color: '#DC2626' }}>Delete message</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
 
       <Dialog
         open={!!previewMedia}

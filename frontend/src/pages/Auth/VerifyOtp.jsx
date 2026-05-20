@@ -26,7 +26,7 @@ function VerifyOtp() {
     // Redirect nếu không có email
     React.useEffect(() => {
         if (!email) {
-            toast.error("Email không hợp lệ. Vui lòng đăng ký lại.");
+            toast.error("Invalid email. Please register again.");
             navigate("/register");
         }
     }, [email, navigate]);
@@ -35,17 +35,17 @@ function VerifyOtp() {
         try {
             const result = await verifyOtp({ email, otp: data.otp });
             if (result) {
-                toast.success("Xác thực OTP thành công!");
+                toast.success("OTP verified successfully!");
                 navigate("/");
             }
         } catch (error) {
-            toast.error("Mã OTP không chính xác. Vui lòng thử lại.");
+            toast.error("Incorrect OTP. Please try again.");
         }
     };
 
     const handleResendOtp = async () => {
         if (resendCooldown > 0) {
-            toast.warning(`Vui lòng đợi ${resendCooldown}s trước khi gửi lại OTP`);
+            toast.warning(`Please wait ${resendCooldown}s before resending OTP`);
             return;
         }
 
@@ -53,7 +53,7 @@ function VerifyOtp() {
         try {
             const result = await resendOtp({ email });
             if (result) {
-                toast.success("Mã OTP mới đã được gửi đến email của bạn!");
+                toast.success("A new OTP has been sent to your email!");
                 
                 // Bắt đầu cooldown 60 giây
                 setResendCooldown(60);
@@ -68,7 +68,7 @@ function VerifyOtp() {
                 }, 1000);
             }
         } catch (error) {
-            toast.error("Không thể gửi lại OTP. Vui lòng thử lại sau.");
+            toast.error("Unable to resend OTP. Please try again later.");
         } finally {
             setIsResending(false);
         }
@@ -112,10 +112,10 @@ function VerifyOtp() {
                         <MarkEmailRead sx={{ color: '#a855f7', fontSize: '3rem' }} />
                     </Box>
                     <Typography variant='h6' sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
-                        Xác thực Email
+                        Verify Email
                     </Typography>
                     <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', px: 2 }}>
-                        Chúng tôi đã gửi mã OTP đến email
+                        We have sent an OTP to the email
                     </Typography>
                     <Typography sx={{ color: '#a855f7', fontSize: '0.875rem', fontWeight: 'bold', mt: 0.5 }}>
                         {email}
@@ -126,14 +126,14 @@ function VerifyOtp() {
                     <Box>
                         <TextField
                             fullWidth
-                            placeholder='Nhập mã OTP'
+                            placeholder='Enter OTP'
                             variant="outlined"
                             error={!!errors['otp']}
                             {...register("otp", {
                                 required: FIELD_REQUIRED_MESSAGE,
                                 pattern: {
                                     value: /^[0-9]{6}$/,
-                                    message: 'Mã OTP phải là 6 chữ số'
+                                    message: 'OTP must be 6 digits'
                                 }
                             })}
                             slotProps={{
@@ -176,12 +176,12 @@ function VerifyOtp() {
                             '&:hover': { background: 'linear-gradient(90deg, #9333ea 0%, #c026d3 100%)' }
                         }}
                     >
-                        Xác nhận
+                        Confirm
                     </Button>
 
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem', mb: 1 }}>
-                            Chưa nhận được mã?
+                            Didn't receive the code?
                         </Typography>
                         <Button
                             variant="text"
@@ -200,7 +200,7 @@ function VerifyOtp() {
                                 }
                             }}
                         >
-                            {resendCooldown > 0 ? `Gửi lại sau ${resendCooldown}s` : 'Gửi lại OTP'}
+                            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
                         </Button>
                     </Box>
                 </CardActions>

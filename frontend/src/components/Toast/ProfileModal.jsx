@@ -101,7 +101,7 @@ export default function ProfileModal({ open, onClose, user, showAddFriendButton 
               startIcon={<PersonAddIcon />}
               sx={{ borderRadius: 999, textTransform: 'none', py: 1 }}
             >
-              {sending ? 'Đang gửi...' : 'Kết bạn'}
+              {sending ? 'Sending...' : 'Add Friend'}
             </Button>
           )}
           {
@@ -115,7 +115,7 @@ export default function ProfileModal({ open, onClose, user, showAddFriendButton 
                 startIcon={<RemoveCircleOutline />}
                 sx={{ borderRadius: 999, textTransform: 'none', py: 1 }}
               >
-                Hủy kết bạn
+                Unfriend
               </Button>
             )
           }
@@ -131,7 +131,7 @@ export default function ProfileModal({ open, onClose, user, showAddFriendButton 
             </Button>
           )}
           <Button onClick={onClose} variant="outlined" fullWidth sx={{ borderRadius: 999, textTransform: 'none', py: 1 }}>
-            Đóng
+            Close
           </Button>
         </DialogActions>
       </Dialog>
