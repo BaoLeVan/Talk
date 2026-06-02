@@ -287,7 +287,7 @@ function SideBar({ selectedIndex, onSelectConversation, setConversation, searchC
             <Typography sx={{ fontWeight: 600, fontSize: '15px', color: COLORS.text, lineHeight: 1.2 }}>
               {user?.userName}
             </Typography>
-            {user?.isOnline && <Typography sx={{ fontSize: '12px', color: COLORS.online, fontWeight: 500 }}>Trực tuyến</Typography>}
+            {user?.isOnline && <Typography sx={{ fontSize: '12px', color: COLORS.online, fontWeight: 500 }}>Online</Typography>}
           </Box>
         </Box>
         <IconButton

@@ -66,7 +66,9 @@ public class ConversationsServiceImpl implements ConversationsService {
     @Override
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public List<MembersResponse> getListMemberByConversationId(Long conversationId) {
-        return conversationsRepository.getListMemberByConversationId(conversationId);
+        List<MembersResponse> members = conversationsRepository.getListMemberByConversationId(conversationId);
+        members.forEach(member -> member.setIsOnline(userService.checkOnline(member.getUserId())));
+        return members;
     }
 
     @Override
@@ -171,7 +173,7 @@ public class ConversationsServiceImpl implements ConversationsService {
 
     public List<ConversationResponse> setUserForConversation(List<ConversationResponse> conversations) {
         Set<Long> senderIds = conversations.stream()
-                .map(ConversationResponse::getConversationLastSenderId)
+                .map(ConversationResponse::getUserId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -180,7 +182,7 @@ public class ConversationsServiceImpl implements ConversationsService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         conversations.forEach(conversation -> {
-            Long senderId = conversation.getConversationLastSenderId();
+            Long senderId = conversation.getUserId();
             if (senderId != null) {
                 User user = userMap.get(senderId);
                 if (user != null) {

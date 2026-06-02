@@ -101,6 +101,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public Boolean checkOnline(Long userId) {
         return redisTemplate.opsForSet().members(Utils.ONLINE_USERS_KEY).contains(userId.toString());
     }

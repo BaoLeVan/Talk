@@ -33,6 +33,7 @@ import { deleteGroupConversation, getConversationMedia } from '~/apis';
 import { toast } from 'react-toastify';
 import { useChatStore } from '~/store/useChatStore';
 import { useStomp } from '~/components/context/StompContext';
+import { COLORS } from '~/utils/common';
 
 function RightPanel({ conversation, onDeleteConversation }) {
     const [userDelete, setUserDelete] = useState(null);
@@ -237,12 +238,22 @@ function RightPanel({ conversation, onDeleteConversation }) {
                             onClick={(event) => handleListItemClick(event, member.userId)}
                         >
                             <ListItem alignItems="flex-start" sx={{ p: 0 }}>
-                                <ListItemAvatar>
-                                    <Badge anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color="success">
-                                        <Avatar alt={member.userName} src={member.userAvatar} sx={{ width: 36, height: 36 }} />
-                                    </Badge>
-                                </ListItemAvatar>
-                                <ListItemText primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{member.userName}</Typography>} />
+                                <Box sx={{ position: 'relative' }}>
+                                            <Avatar alt={member?.userName} src={member?.userAvatar} sx={{ width: 40, height: 40 }} />
+                                            {member?.isOnline && (
+                                              <Box sx={{
+                                                position: 'absolute',
+                                                bottom: 1,
+                                                right: 1,
+                                                width: 10,
+                                                height: 10,
+                                                borderRadius: '999px',
+                                                bgcolor: COLORS.online,
+                                                border: '2px solid white'
+                                              }} />
+                                            )}
+                                </Box>
+                                <ListItemText primary={<Typography variant="body2" sx={{ fontWeight: 600, ml:1 }}>{member.userName}</Typography>} />
                                 {user?.id !== member?.userId && member?.userRole !== 'ADMIN' && (
                                     <IconButton onClick={() => handleDelete(member)} size='small' color='error'>
                                         <Close fontSize="small" />
